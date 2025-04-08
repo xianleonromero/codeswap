@@ -1,0 +1,69 @@
+plugins {
+    alias(libs.plugins.android.application)
+}
+
+android {
+    namespace 'com.naix.codeswap'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.naix.codeswap"
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/notice.txt'
+        exclude 'META-INF/ASL2.0'
+        exclude 'META-INF/*.kotlin_module'
+    }
+}
+
+dependencies {
+    // Dependencias básicas de Android (ya incluidas)
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.constraintlayout.v214
+
+    // Retrofit para comunicación API REST
+    implementation libs.retrofit
+    implementation libs.converter.gson
+
+    // Google Play Services para Calendar API
+    implementation libs.play.services.auth.v2060
+    implementation libs.google.api.client.android
+    implementation libs.google.api.services.calendar
+
+    // Gestión de imágenes
+    implementation libs.glide
+
+    // Para llamadas asíncronas
+    implementation libs.lifecycle.viewmodel
+    implementation libs.lifecycle.livedata
+    implementation libs.activity
+
+    // Test (ya incluidos)
+    testImplementation libs.junit
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core.v351
+
+}
