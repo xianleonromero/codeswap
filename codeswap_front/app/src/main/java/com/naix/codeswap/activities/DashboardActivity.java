@@ -14,7 +14,7 @@ import com.naix.codeswap.fragments.MatchesFragment;
 import com.naix.codeswap.fragments.ProfileFragment;
 import com.naix.codeswap.fragments.SessionsFragment;
 
-public class DashboardActivity extends AppCompatActivity implements BottomNavigationView.OnNavigationItemSelectedListener {
+public class DashboardActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
 
@@ -24,26 +24,25 @@ public class DashboardActivity extends AppCompatActivity implements BottomNaviga
         setContentView(R.layout.activity_dashboard);
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setOnNavigationItemSelectedListener(this);
+        bottomNavigationView.setOnItemSelectedListener(this::onNavigationItemSelected);
 
         // Cargar el fragmento inicial (Home)
         loadFragment(new HomeFragment());
     }
 
-    @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         Fragment fragment = null;
 
-        if (item.getItemId() == R.id.nav_home) {
+        int itemId = item.getItemId();
+        if (itemId == R.id.nav_home) {
             fragment = new HomeFragment();
-        } else if (item.getItemId() == R.id.nav_matches) {
+        } else if (itemId == R.id.nav_matches) {
             fragment = new MatchesFragment();
-        } else if (item.getItemId() == R.id.nav_sessions) {
+        } else if (itemId == R.id.nav_sessions) {
             fragment = new SessionsFragment();
-        } else if (item.getItemId() == R.id.nav_profile) {
+        } else if (itemId == R.id.nav_profile) {
             fragment = new ProfileFragment();
         }
-
 
         return loadFragment(fragment);
     }
