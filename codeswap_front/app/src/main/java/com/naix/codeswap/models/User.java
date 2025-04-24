@@ -15,8 +15,37 @@ public class User {
     public void setId(int id) {
         this.id = id;
     }
+    public String getUsername() {
+        return username;
+    }
 
-    // Añadir el resto de getters y setters
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
 
     public String getFullName() {
         if (firstName != null && !firstName.isEmpty() && lastName != null && !lastName.isEmpty()) {
