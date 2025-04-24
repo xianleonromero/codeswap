@@ -17,10 +17,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.naix.codeswap.R;
+import com.naix.codeswap.activities.EditProfileActivity;
 import com.naix.codeswap.activities.LoginActivity;
+import com.naix.codeswap.adapters.SkillAdapter;
 import com.naix.codeswap.api.ApiClient;
 import com.naix.codeswap.api.ApiService;
+import com.naix.codeswap.models.ProgrammingLanguage;
 import com.naix.codeswap.models.User;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ProfileFragment extends Fragment {
 
@@ -64,8 +70,8 @@ public class ProfileFragment extends Fragment {
 
         // Configurar listeners
         btnEditProfile.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Editar perfil", Toast.LENGTH_SHORT).show();
-            // Aquí navegarías a la pantalla de edición de perfil
+            Intent intent = new Intent(getActivity(), EditProfileActivity.class);
+            startActivity(intent);
         });
 
         btnLogout.setOnClickListener(v -> {
@@ -80,12 +86,50 @@ public class ProfileFragment extends Fragment {
     }
 
     private void loadMockProfileData() {
-        // En una app real, cargarías los datos del usuario actual
+        // Datos simulados del perfil
         tvUsername.setText("JuanDev");
         tvUserRating.setText("Valoración: 4.5/5.0");
         tvBio.setText("Desarrollador full-stack con 5 años de experiencia. Especializado en Java y Spring Boot, con interés en aprender nuevas tecnologías frontend.");
 
-        // Aquí cargarías también las habilidades ofrecidas y buscadas
-        // y las mostrarías en los RecyclerViews
+        // Simular habilidades ofrecidas
+        List<ProgrammingLanguage> offeredSkills = new ArrayList<>();
+
+        ProgrammingLanguage java = new ProgrammingLanguage();
+        java.setId(1);
+        java.setName("Java");
+
+        ProgrammingLanguage python = new ProgrammingLanguage();
+        python.setId(2);
+        python.setName("Python");
+
+        ProgrammingLanguage spring = new ProgrammingLanguage();
+        spring.setId(3);
+        spring.setName("Spring Boot");
+
+        offeredSkills.add(java);
+        offeredSkills.add(python);
+        offeredSkills.add(spring);
+
+        // Usar el adaptador para las habilidades ofrecidas
+        SkillAdapter offeredAdapter = new SkillAdapter(getContext(), offeredSkills);
+        recyclerSkillsOffered.setAdapter(offeredAdapter);
+
+        // Simular habilidades buscadas
+        List<ProgrammingLanguage> wantedSkills = new ArrayList<>();
+
+        ProgrammingLanguage react = new ProgrammingLanguage();
+        react.setId(4);
+        react.setName("React");
+
+        ProgrammingLanguage angular = new ProgrammingLanguage();
+        angular.setId(5);
+        angular.setName("Angular");
+
+        wantedSkills.add(react);
+        wantedSkills.add(angular);
+
+        // Usar el adaptador para las habilidades buscadas
+        SkillAdapter wantedAdapter = new SkillAdapter(getContext(), wantedSkills);
+        recyclerSkillsWanted.setAdapter(wantedAdapter);
     }
 }

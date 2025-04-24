@@ -20,8 +20,11 @@ import com.naix.codeswap.adapters.MatchAdapter;
 import com.naix.codeswap.api.ApiClient;
 import com.naix.codeswap.api.ApiService;
 import com.naix.codeswap.models.Match;
+import com.naix.codeswap.models.ProgrammingLanguage;
+import com.naix.codeswap.models.User;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import retrofit2.Call;
@@ -92,7 +95,14 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
                 // No es necesario hacer nada
             }
         });
+
+        // Seleccionar la primera pestaña para cargar los datos inicialmente
+        if (tabLayout.getTabCount() > 0) {
+            adapter.updateData(potentialMatches);
+            updateEmptyState(potentialMatches);
+        }
     }
+
 
     private void loadPotentialMatches() {
         showLoading(true);
@@ -161,22 +171,116 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
 
     // Para simular datos en la demostración
     private void simulatePotentialMatches() {
-        // Aquí crearías datos simulados para probar
-        // Por ahora, solo mostramos el estado de carga/vacío
-        showLoading(false);
+        // Simulamos algunos matches potenciales
         potentialMatches = new ArrayList<>();
+
+        // Crear usuario simulado
+        User user1 = new User();
+        user1.setId(1);
+        user1.setUsername("JuanDev");
+
+        for (int i = 1; i <= 3; i++) {
+            User user2 = new User();
+            user2.setId(i + 10);
+            user2.setUsername("Desarrollador" + i);
+
+            Match match = new Match();
+            match.setId(i);
+            match.setUser1(user1);
+            match.setUser2(user2);
+            match.setMatchType("POTENTIAL");
+            match.setCompatibilityScore(85 + i);
+            match.setCreatedAt(new Date());
+
+            // Añadir lenguajes ofrecidos
+            List<ProgrammingLanguage> offered = new ArrayList<>();
+            ProgrammingLanguage java = new ProgrammingLanguage();
+            java.setId(1);
+            java.setName("Java");
+
+            ProgrammingLanguage python = new ProgrammingLanguage();
+            python.setId(2);
+            python.setName("Python");
+
+            offered.add(java);
+            offered.add(python);
+            match.setUser1Offers(offered);
+
+            // Añadir lenguajes buscados
+            List<ProgrammingLanguage> wanted = new ArrayList<>();
+            ProgrammingLanguage kotlin = new ProgrammingLanguage();
+            kotlin.setId(3);
+            kotlin.setName("Kotlin");
+
+            ProgrammingLanguage flutter = new ProgrammingLanguage();
+            flutter.setId(4);
+            flutter.setName("Flutter");
+
+            wanted.add(kotlin);
+            if (i % 2 == 0) {
+                wanted.add(flutter);
+            }
+            match.setUser2Wants(wanted);
+
+            potentialMatches.add(match);
+        }
+
+        showLoading(false);
         adapter.updateData(potentialMatches);
         updateEmptyState(potentialMatches);
 
-        // No olvides cargar también los matches normales
         loadNormalMatches();
     }
 
     private void simulateNormalMatches() {
-        // Aquí crearías datos simulados para probar
-        showLoading(false);
+        // Simulamos matches normales
         normalMatches = new ArrayList<>();
-        // No actualizamos el adaptador aquí porque depende de qué pestaña esté seleccionada
+
+        User user1 = new User();
+        user1.setId(1);
+        user1.setUsername("JuanDev");
+
+        for (int i = 1; i <= 4; i++) {
+            User user2 = new User();
+            user2.setId(i + 20);
+            user2.setUsername("Programador" + i);
+
+            Match match = new Match();
+            match.setId(i + 100);
+            match.setUser1(user1);
+            match.setUser2(user2);
+            match.setMatchType("NORMAL");
+            match.setCompatibilityScore(70 + i);
+            match.setCreatedAt(new Date());
+
+            // Añadir lenguajes ofrecidos
+            List<ProgrammingLanguage> offered = new ArrayList<>();
+            ProgrammingLanguage react = new ProgrammingLanguage();
+            react.setId(5);
+            react.setName("React");
+
+            offered.add(react);
+            match.setUser1Offers(offered);
+
+            // Añadir lenguajes buscados
+            List<ProgrammingLanguage> wanted = new ArrayList<>();
+            ProgrammingLanguage angular = new ProgrammingLanguage();
+            angular.setId(6);
+            angular.setName("Angular");
+
+            wanted.add(angular);
+            match.setUser2Wants(wanted);
+
+            normalMatches.add(match);
+        }
+
+        showLoading(false);
+
+        // Si estamos en la pestaña de matches normales, actualizar la vista
+        if (tabLayout != null && tabLayout.getSelectedTabPosition() == 1) {
+            adapter.updateData(normalMatches);
+            updateEmptyState(normalMatches);
+        }
     }
 
     private void updateEmptyState(List<Match> matches) {
@@ -198,6 +302,23 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
             progressBar.setVisibility(View.GONE);
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     @Override
     public void onViewDetailsClick(Match match) {

@@ -1,59 +1,89 @@
 package com.naix.codeswap.models;
 
+import java.util.List;
+
 public class User {
     private int id;
     private String username;
+    private String fullName;
     private String email;
-    private String firstName;
-    private String lastName;
+    private String bio;
+    private String avatarUrl;
+    private float rating;
+    private List<OfferedSkill> offeredSkills;
+    private List<WantedSkill> wantedSkills;
 
-    // Getters y Setters
+    // Getters
     public int getId() {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
     public String getUsername() {
         return username;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public String getFullName() {
+        return fullName;
     }
 
     public String getEmail() {
         return email;
     }
 
+    public String getBio() {
+        return bio;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public float getRating() {
+        return rating;
+    }
+
+    public List<OfferedSkill> getOfferedSkills() {
+        return offeredSkills;
+    }
+
+    public List<WantedSkill> getWantedSkills() {
+        return wantedSkills;
+    }
+
+    // Setters
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
     public void setEmail(String email) {
         this.email = email;
     }
 
-    public String getFirstName() {
-        return firstName;
+    public void setBio(String bio) {
+        this.bio = bio;
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 
-    public String getLastName() {
-        return lastName;
+    public void setRating(float rating) {
+        this.rating = rating;
     }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
+    public void setOfferedSkills(List<OfferedSkill> offeredSkills) {
+        this.offeredSkills = offeredSkills;
     }
 
-    public String getFullName() {
-        if (firstName != null && !firstName.isEmpty() && lastName != null && !lastName.isEmpty()) {
-            return firstName + " " + lastName;
-        } else if (firstName != null && !firstName.isEmpty()) {
-            return firstName;
-        } else {
-            return username;
-        }
+    public void setWantedSkills(List<WantedSkill> wantedSkills) {
+        this.wantedSkills = wantedSkills;
     }
 }
