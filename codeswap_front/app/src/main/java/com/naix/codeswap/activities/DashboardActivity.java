@@ -2,6 +2,7 @@ package com.naix.codeswap.activities;
 
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,6 +21,11 @@ public class DashboardActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        boolean isDemoMode = getIntent().getBooleanExtra("IS_DEMO_MODE", false);
+        if (isDemoMode) {
+            Toast.makeText(this, "Modo demo activado. Algunas funciones están limitadas.", Toast.LENGTH_LONG).show();
+            // Aquí se podrán establecer variables o configuraciones específicas para el modo demo
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
