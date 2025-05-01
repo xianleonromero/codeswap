@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     # Bibliotecas de terceiros
     'rest_framework',
+    'rest_framework.authtoken'
     'corsheaders',
 
     # Miñas aplicacións
@@ -65,6 +66,17 @@ MIDDLEWARE = [
 ]
 # Permitir solicitudes desde Android (desarrollo)
 CORS_ALLOW_ALL_ORIGINS = True  # Solo para desarrollo
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
 
 ROOT_URLCONF = 'codeswap_backend.urls'
 
