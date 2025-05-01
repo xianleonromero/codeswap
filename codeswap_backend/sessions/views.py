@@ -5,10 +5,16 @@ from django.db.models import Q
 from .models import Session
 from .serializers import SessionSerializer, SessionListSerializer
 from users.permissions import IsOwnerOrReadOnly
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter
 
 class SessionViewSet(viewsets.ModelViewSet):
     serializer_class = SessionSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['status', 'language']
+    ordering_fields = ['date_time', 'created_at']
+    ordering = ['-date_time']
 
     def get_queryset(self):
         user = self.request.user

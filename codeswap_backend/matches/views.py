@@ -4,10 +4,16 @@ from rest_framework.response import Response
 from django.db.models import Q
 from .models import Match
 from .serializers import MatchSerializer, MatchListSerializer
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter
 
 class MatchViewSet(viewsets.ModelViewSet):
     serializer_class = MatchSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['match_type']
+    ordering_fields = ['compatibility_score', 'created_at']
+    ordering = ['-compatibility_score']
 
     def get_queryset(self):
         user = self.request.user

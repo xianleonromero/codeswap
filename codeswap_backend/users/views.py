@@ -7,6 +7,8 @@ from django.contrib.auth import authenticate
 from .models import Profile, OfferedSkill, WantedSkill
 from .serializers import (UserSerializer, ProfileSerializer,
                           OfferedSkillSerializer, WantedSkillSerializer)
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -17,6 +19,10 @@ class ProfileViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'bio']
+    ordering_fields = ['rating', 'user__date_joined']
+    ordering = ['-rating']
 
 class OfferedSkillViewSet(viewsets.ModelViewSet):
     serializer_class = OfferedSkillSerializer
