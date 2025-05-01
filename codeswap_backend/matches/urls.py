@@ -7,4 +7,5 @@ router.register(r'', MatchViewSet, basename='matches')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('admin/generate-matches/', generate_matches_admin, name='generate-matches-admin'),
 ]

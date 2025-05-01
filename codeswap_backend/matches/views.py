@@ -36,3 +36,9 @@ class MatchViewSet(viewsets.ModelViewSet):
             match.delete()
             return Response({'status': 'match rechazado'})
         return Response({'error': 'No se pudo rechazar el match'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @staff_member_required
+    @require_POST
+    def generate_matches_admin(request):
+        matches_created = generate_potential_matches()
+        return JsonResponse({'success': True, 'matches_created': matches_created})
