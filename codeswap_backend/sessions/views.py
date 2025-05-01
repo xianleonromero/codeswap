@@ -4,10 +4,11 @@ from rest_framework.response import Response
 from django.db.models import Q
 from .models import Session
 from .serializers import SessionSerializer, SessionListSerializer
+from users.permissions import IsOwnerOrReadOnly
 
 class SessionViewSet(viewsets.ModelViewSet):
     serializer_class = SessionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
         user = self.request.user
