@@ -2,7 +2,7 @@ from .settings import *
 import os
 
 DEBUG = False
-ALLOWED_HOSTS = ['tu-dominio-o-ip.com', 'www.tu-dominio-o-ip.com']
+ALLOWED_HOSTS = ['codeswap-68w3.onrender.com', '.onrender.com', '*']
 
 DATABASES = {
     'default': {
@@ -17,9 +17,10 @@ DATABASES = {
 
 
 CORS_ALLOWED_ORIGINS = [
-    "https://tu-app-android.com",
+    "https://codeswap-68w3.onrender.com",
+    "https://tu-app-android.com"
 ]
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True  
 
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
