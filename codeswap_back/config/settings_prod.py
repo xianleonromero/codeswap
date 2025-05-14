@@ -1,4 +1,5 @@
 from .settings import *
+import os
 
 DEBUG = False
 ALLOWED_HOSTS = ['tu-dominio-o-ip.com', 'www.tu-dominio-o-ip.com']
