@@ -95,7 +95,17 @@ public class RegisterActivity extends AppCompatActivity {
                     Toast.makeText(RegisterActivity.this, "Registro exitoso. Ahora puedes iniciar sesión.", Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
-                    Toast.makeText(RegisterActivity.this, "Error en el registro. Inténtalo de nuevo.", Toast.LENGTH_SHORT).show();
+                    String errorMsg = "Error " + response.code();
+                    try {
+                        if (response.errorBody() != null) {
+                            String errorBody = response.errorBody().string();
+                            errorMsg = "Error: " + errorBody;
+                            System.out.println("Error de registro detallado: " + errorBody);
+                        }
+                    } catch (Exception e) {
+                        errorMsg += " (sin detalles)";
+                    }
+                    Toast.makeText(RegisterActivity.this, errorMsg, Toast.LENGTH_LONG).show();
                 }
             }
 
