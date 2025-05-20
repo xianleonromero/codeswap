@@ -11,6 +11,15 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.naix.codeswap.R;
+import com.naix.codeswap.api.ApiClient;
+import com.naix.codeswap.api.ApiService;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -67,7 +76,33 @@ public class RegisterActivity extends AppCompatActivity {
             Toast.makeText(this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
             return;
         }
-        Toast.makeText(this, "Registro exitoso. Ahora puedes iniciar sesión.", Toast.LENGTH_SHORT).show();
-        finish();
+
+        // Crear objeto de registro
+        Map<String, String> registerData = new HashMap<>();
+        registerData.put("username", username);
+        registerData.put("email", email);
+        registerData.put("password1", password);
+        registerData.put("password2", confirmPassword);
+
+        // Hacer llamada a la API real
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        Call<Map<String, Object>> call = apiService.register(registerData);
+
+        call.enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Toast.makeText(RegisterActivity.this, "Registro exitoso. Ahora puedes iniciar sesión.", Toast.LENGTH_SHORT).show();
+                    finish();
+                } else {
+                    Toast.makeText(RegisterActivity.this, "Error en el registro. Inténtalo de nuevo.", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                Toast.makeText(RegisterActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

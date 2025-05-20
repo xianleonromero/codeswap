@@ -52,4 +52,10 @@ public interface ApiService {
 
     @PUT("sessions/{id}/")
     Call<Session> updateSessionStatus(@Path("id") int sessionId, @Body Map<String, String> statusUpdate);
+
+    @POST("auth/login/")
+    Call<Map<String, Object>> login(@Body Map<String, String> credentials);
+
+    @POST("auth/registration/")
+    Call<Map<String, Object>> register(@Body Map<String, String> userData);
 }

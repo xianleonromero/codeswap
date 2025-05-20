@@ -10,8 +10,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.naix.codeswap.R;
+import com.naix.codeswap.api.ApiClient;
+import com.naix.codeswap.api.ApiService;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class LoginActivity extends AppCompatActivity {
     private EditText etUsername;
@@ -39,23 +47,7 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String username = etUsername.getText().toString().trim();
-                String password = etPassword.getText().toString();
-
-                // Validación básica
-                if (username.isEmpty() || password.isEmpty()) {
-                    Toast.makeText(LoginActivity.this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                // En una app real, aquí se haría la llamada al API para autenticar
-                // Por ahora, simulamos un login exitoso con cualquier credencial
-                Toast.makeText(LoginActivity.this, "Iniciando sesión...", Toast.LENGTH_SHORT).show();
-
-                // Navegar al dashboard
-                Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
-                startActivity(intent);
-                finish();
+                attemptLogin();
             }
         });
         TextView tvDemo = findViewById(R.id.tvDemo);
@@ -71,6 +63,45 @@ public class LoginActivity extends AppCompatActivity {
                 intent.putExtra("IS_DEMO_MODE", true);
                 startActivity(intent);
                 finish();
+            }
+        });
+    }
+
+    private void attemptLogin() {
+        String username = etUsername.getText().toString().trim();
+        String password = etPassword.getText().toString();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Crear objeto de login
+        Map<String, String> loginData = new HashMap<>();
+        loginData.put("username", username);
+        loginData.put("password", password);
+
+        // Hacer llamada a la API real
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        Call<Map<String, Object>> call = apiService.login(loginData);
+
+        call.enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Toast.makeText(LoginActivity.this, "Login exitoso", Toast.LENGTH_SHORT).show();
+
+                    Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
+                    startActivity(intent);
+                    finish();
+                } else {
+                    Toast.makeText(LoginActivity.this, "Credenciales incorrectas", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                Toast.makeText(LoginActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
