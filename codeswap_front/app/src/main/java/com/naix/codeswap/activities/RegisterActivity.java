@@ -13,8 +13,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.naix.codeswap.R;
 import com.naix.codeswap.api.ApiClient;
 import com.naix.codeswap.api.ApiService;
+import com.naix.codeswap.models.ProgrammingLanguage;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -58,6 +60,8 @@ public class RegisterActivity extends AppCompatActivity {
                 finish();
             }
         });
+
+        testBackend();
     }
 
     private void registerUser() {
@@ -77,33 +81,38 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        // Crear objeto de registro
+        // Datos exactos que espera tu backend
         Map<String, String> registerData = new HashMap<>();
         registerData.put("username", username);
         registerData.put("email", email);
-        registerData.put("password1", password);
-        registerData.put("password2", confirmPassword);
+        registerData.put("password", password);
 
-        // Hacer llamada a la API real
+        // Debug: ver qué datos se envían
+        System.out.println("DEBUG - Datos a enviar: " + registerData.toString());
+        System.out.println("DEBUG - URL completa: " + ApiClient.getClient().baseUrl() + "auth/registration/");
+
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
         Call<Map<String, Object>> call = apiService.register(registerData);
 
         call.enqueue(new Callback<Map<String, Object>>() {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                System.out.println("DEBUG - Response code: " + response.code());
+
                 if (response.isSuccessful() && response.body() != null) {
-                    Toast.makeText(RegisterActivity.this, "Registro exitoso. Ahora puedes iniciar sesión.", Toast.LENGTH_SHORT).show();
+                    System.out.println("DEBUG - Success response: " + response.body().toString());
+                    Toast.makeText(RegisterActivity.this, "Registro exitoso. Puedes iniciar sesión.", Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
                     String errorMsg = "Error " + response.code();
                     try {
                         if (response.errorBody() != null) {
                             String errorBody = response.errorBody().string();
+                            System.out.println("DEBUG - Error body: " + errorBody);
                             errorMsg = "Error: " + errorBody;
-                            System.out.println("Error de registro detallado: " + errorBody);
                         }
                     } catch (Exception e) {
-                        errorMsg += " (sin detalles)";
+                        System.out.println("DEBUG - Exception reading error: " + e.getMessage());
                     }
                     Toast.makeText(RegisterActivity.this, errorMsg, Toast.LENGTH_LONG).show();
                 }
@@ -111,7 +120,30 @@ public class RegisterActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                Toast.makeText(RegisterActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                System.out.println("DEBUG - Network failure: " + t.getMessage());
+                t.printStackTrace();
+                Toast.makeText(RegisterActivity.this, "Error de red: " + t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+    private void testBackend() {
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        Call<List<ProgrammingLanguage>> call = apiService.getProgrammingLanguages();
+
+        call.enqueue(new Callback<List<ProgrammingLanguage>>() {
+            @Override
+            public void onResponse(Call<List<ProgrammingLanguage>> call, Response<List<ProgrammingLanguage>> response) {
+                System.out.println("TEST - Languages response: " + response.code());
+                if (response.isSuccessful() && response.body() != null) {
+                    Toast.makeText(RegisterActivity.this, "Backend OK - " + response.body().size() + " lenguajes", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(RegisterActivity.this, "Backend error: " + response.code(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<ProgrammingLanguage>> call, Throwable t) {
+                Toast.makeText(RegisterActivity.this, "No conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
