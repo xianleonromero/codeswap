@@ -20,7 +20,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://codeswap-68w3.onrender.com",
     "https://tu-app-android.com"
 ]
-CORS_ALLOW_ALL_ORIGINS = True  
+CORS_ALLOW_ALL_ORIGINS = True
 
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
