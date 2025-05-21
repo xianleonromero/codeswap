@@ -1,5 +1,6 @@
 package com.naix.codeswap.activities;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -24,16 +25,26 @@ public class DashboardActivity extends AppCompatActivity {
         boolean isDemoMode = getIntent().getBooleanExtra("IS_DEMO_MODE", false);
         if (isDemoMode) {
             Toast.makeText(this, "Modo demo activado. Algunas funciones están limitadas.", Toast.LENGTH_LONG).show();
-            // Aquí se podrán establecer variables o configuraciones específicas para el modo demo
         }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setOnItemSelectedListener(this::onNavigationItemSelected);
+        showCurrentUser();
 
         // Cargar el fragmento inicial (Home)
         loadFragment(new HomeFragment());
+    }
+
+    private void showCurrentUser() {
+        // Obtener username guardado
+        SharedPreferences prefs = getSharedPreferences("CodeSwapPrefs", MODE_PRIVATE);
+        String username = prefs.getString("username", "");
+
+        if (!username.isEmpty() && getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("CodeSwap - " + username);
+        }
     }
 
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {

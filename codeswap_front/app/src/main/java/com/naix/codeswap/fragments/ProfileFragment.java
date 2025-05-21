@@ -27,6 +27,11 @@ import com.naix.codeswap.models.User;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ProfileFragment extends Fragment {
 
@@ -65,8 +70,8 @@ public class ProfileFragment extends Fragment {
         // Inicializar API service
         apiService = ApiClient.getClient().create(ApiService.class);
 
-        // Cargar datos de perfil simulados
-        loadMockProfileData();
+        // Cargar datos de perfil
+        loadProfileData();
 
         // Configurar listeners
         btnEditProfile.setOnClickListener(v -> {
@@ -85,51 +90,119 @@ public class ProfileFragment extends Fragment {
         });
     }
 
-    private void loadMockProfileData() {
-        // Datos simulados del perfil
-        tvUsername.setText("JuanDev");
-        tvUserRating.setText("Valoración: 4.5/5.0");
-        tvBio.setText("Desarrollador full-stack con 5 años de experiencia. Especializado en Java y Spring Boot, con interés en aprender nuevas tecnologías frontend.");
+    private void loadProfileData() {
 
-        // Simular habilidades ofrecidas
-        List<ProgrammingLanguage> offeredSkills = new ArrayList<>();
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        Call<Map<String, Object>> call = apiService.getProfile();
 
-        ProgrammingLanguage java = new ProgrammingLanguage();
-        java.setId(1);
-        java.setName("Java");
+        call.enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                // Ocultar carga
+                // progressBar.setVisibility(View.GONE);
 
-        ProgrammingLanguage python = new ProgrammingLanguage();
-        python.setId(2);
-        python.setName("Python");
+                if (response.isSuccessful() && response.body() != null) {
+                    try {
+                        Map<String, Object> data = response.body();
+                        Map<String, Object> user = (Map<String, Object>) data.get("user");
 
-        ProgrammingLanguage spring = new ProgrammingLanguage();
-        spring.setId(3);
-        spring.setName("Spring Boot");
+                        // Datos básicos
+                        String username = (String) user.get("username");
+                        tvUsername.setText(username);
 
-        offeredSkills.add(java);
-        offeredSkills.add(python);
-        offeredSkills.add(spring);
+                        // Bio (puede ser null)
+                        String bio = "";
+                        if (data.containsKey("bio") && data.get("bio") != null) {
+                            bio = (String) data.get("bio");
+                        }
+                        tvBio.setText(bio);
 
-        // Usar el adaptador para las habilidades ofrecidas
-        SkillAdapter offeredAdapter = new SkillAdapter(getContext(), offeredSkills);
-        recyclerSkillsOffered.setAdapter(offeredAdapter);
+                        // Rating (puede ser null)
+                        double rating = 4.5; // Default
+                        if (data.containsKey("rating") && data.get("rating") != null) {
+                            try {
+                                rating = Double.parseDouble(data.get("rating").toString());
+                            } catch (Exception e) {
+                                System.out.println("Error parsing rating: " + e.getMessage());
+                            }
+                        }
+                        tvUserRating.setText("Valoración: " + String.format("%.1f", rating) + "/5.0");
 
-        // Simular habilidades buscadas
-        List<ProgrammingLanguage> wantedSkills = new ArrayList<>();
+                        // Habilidades ofrecidas
+                        List<ProgrammingLanguage> offeredSkills = new ArrayList<>();
+                        try {
+                            if (data.containsKey("offered_skills")) {
+                                List<Map<String, Object>> offered = (List<Map<String, Object>>) data.get("offered_skills");
 
-        ProgrammingLanguage react = new ProgrammingLanguage();
-        react.setId(4);
-        react.setName("React");
+                                for (Map<String, Object> skill : offered) {
+                                    Map<String, Object> lang = (Map<String, Object>) skill.get("language");
 
-        ProgrammingLanguage angular = new ProgrammingLanguage();
-        angular.setId(5);
-        angular.setName("Angular");
+                                    ProgrammingLanguage pl = new ProgrammingLanguage();
+                                    if (lang.containsKey("id")) {
+                                        double id = (double) lang.get("id");
+                                        pl.setId((int) id);
+                                    }
+                                    pl.setName((String) lang.get("name"));
 
-        wantedSkills.add(react);
-        wantedSkills.add(angular);
+                                    offeredSkills.add(pl);
+                                }
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Error parsing offered skills: " + e.getMessage());
+                        }
 
-        // Usar el adaptador para las habilidades buscadas
-        SkillAdapter wantedAdapter = new SkillAdapter(getContext(), wantedSkills);
-        recyclerSkillsWanted.setAdapter(wantedAdapter);
+                        // Habilidades deseadas
+                        List<ProgrammingLanguage> wantedSkills = new ArrayList<>();
+                        try {
+                            if (data.containsKey("wanted_skills")) {
+                                List<Map<String, Object>> wanted = (List<Map<String, Object>>) data.get("wanted_skills");
+
+                                for (Map<String, Object> skill : wanted) {
+                                    Map<String, Object> lang = (Map<String, Object>) skill.get("language");
+
+                                    ProgrammingLanguage pl = new ProgrammingLanguage();
+                                    if (lang.containsKey("id")) {
+                                        double id = (double) lang.get("id");
+                                        pl.setId((int) id);
+                                    }
+                                    pl.setName((String) lang.get("name"));
+
+                                    wantedSkills.add(pl);
+                                }
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Error parsing wanted skills: " + e.getMessage());
+                        }
+
+                        // Actualizar RecyclerViews
+                        SkillAdapter offeredAdapter = new SkillAdapter(getContext(), offeredSkills);
+                        recyclerSkillsOffered.setAdapter(offeredAdapter);
+
+                        SkillAdapter wantedAdapter = new SkillAdapter(getContext(), wantedSkills);
+                        recyclerSkillsWanted.setAdapter(wantedAdapter);
+
+                    } catch (Exception e) {
+                        System.out.println("Error parsing profile: " + e.getMessage());
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Error al procesar datos del perfil", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    try {
+                        String error = response.errorBody() != null ? response.errorBody().string() : "";
+                        System.out.println("Error profile: " + response.code() + " - " + error);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    Toast.makeText(getContext(), "Error al cargar perfil: " + response.code(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                // progressBar.setVisibility(View.GONE);
+                System.out.println("Network error: " + t.getMessage());
+                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

@@ -68,7 +68,7 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
         apiService = ApiClient.getClient().create(ApiService.class);
 
         // Cargar los datos iniciales (potential matches)
-        loadPotentialMatches();
+        loadMatches();
 
         // Configurar el cambio de tabs
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -104,69 +104,72 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
     }
 
 
-    private void loadPotentialMatches() {
+    private void loadMatches() {
         showLoading(true);
 
-        // En una aplicación real, esta llamada usaría la API real
-        // Para demo, usamos datos simulados
-        simulatePotentialMatches();
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
 
-        // Ejemplo de cómo sería con la API real:
-        /*
-        apiService.getPotentialMatches().enqueue(new Callback<List<Match>>() {
+        // Cargar matches potenciales
+        Call<List<Match>> call = apiService.getPotentialMatches();
+        call.enqueue(new Callback<List<Match>>() {
             @Override
             public void onResponse(Call<List<Match>> call, Response<List<Match>> response) {
-                showLoading(false);
                 if (response.isSuccessful() && response.body() != null) {
                     potentialMatches = response.body();
-                    adapter.updateData(potentialMatches);
-                    updateEmptyState(potentialMatches);
+                    if (tabLayout.getSelectedTabPosition() == 0) {
+                        adapter.updateData(potentialMatches);
+                        updateEmptyState(potentialMatches);
+                    }
                 } else {
-                    Toast.makeText(getContext(), "Error al cargar los matches", Toast.LENGTH_SHORT).show();
+                    System.out.println("Error loading potential matches: " + response.code());
+                    // Fallback a datos simulados
+                    simulatePotentialMatches();
                 }
+
+                // Cargar matches normales después
+                loadNormalMatchesFromApi();
             }
 
             @Override
             public void onFailure(Call<List<Match>> call, Throwable t) {
-                showLoading(false);
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                System.out.println("Network error: " + t.getMessage());
+                // Fallback a datos simulados
+                simulatePotentialMatches();
+                loadNormalMatchesFromApi();
             }
         });
-        */
     }
 
-    private void loadNormalMatches() {
-        showLoading(true);
+    private void loadNormalMatchesFromApi() {
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        Call<List<Match>> call = apiService.getNormalMatches();
 
-        // En una aplicación real, esta llamada usaría la API real
-        // Para demo, usamos datos simulados
-        simulateNormalMatches();
-
-        // Ejemplo de cómo sería con la API real:
-        /*
-        apiService.getNormalMatches().enqueue(new Callback<List<Match>>() {
+        call.enqueue(new Callback<List<Match>>() {
             @Override
             public void onResponse(Call<List<Match>> call, Response<List<Match>> response) {
                 showLoading(false);
+
                 if (response.isSuccessful() && response.body() != null) {
                     normalMatches = response.body();
-                    // Si estamos en la pestaña de matches normales, actualizar la vista
                     if (tabLayout.getSelectedTabPosition() == 1) {
                         adapter.updateData(normalMatches);
                         updateEmptyState(normalMatches);
                     }
                 } else {
-                    Toast.makeText(getContext(), "Error al cargar los matches", Toast.LENGTH_SHORT).show();
+                    System.out.println("Error loading normal matches: " + response.code());
+                    // Fallback a datos simulados
+                    simulateNormalMatches();
                 }
             }
 
             @Override
             public void onFailure(Call<List<Match>> call, Throwable t) {
                 showLoading(false);
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                System.out.println("Network error: " + t.getMessage());
+                // Fallback a datos simulados
+                simulateNormalMatches();
             }
         });
-        */
     }
 
     // Para simular datos en la demostración
@@ -229,7 +232,7 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
         adapter.updateData(potentialMatches);
         updateEmptyState(potentialMatches);
 
-        loadNormalMatches();
+        loadMatches();
     }
 
     private void simulateNormalMatches() {
@@ -302,22 +305,6 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
             progressBar.setVisibility(View.GONE);
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     @Override
