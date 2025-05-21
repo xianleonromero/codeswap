@@ -58,4 +58,7 @@ public interface ApiService {
 
     @POST("auth/registration/")
     Call<Map<String, Object>> register(@Body Map<String, String> userData);
+
+    @GET("profile/")
+    Call<Map<String, Object>> getProfile();
 }

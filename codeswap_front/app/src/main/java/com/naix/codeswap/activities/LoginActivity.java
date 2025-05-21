@@ -2,6 +2,7 @@ package com.naix.codeswap.activities;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -57,7 +58,6 @@ public class LoginActivity extends AppCompatActivity {
                 // Simular login en modo demo
                 Toast.makeText(LoginActivity.this, "Entrando en modo demo...", Toast.LENGTH_SHORT).show();
 
-                // aquí se podrá establecer una bandera o token especial que indique que la app está en modo demo
 
                 Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
                 intent.putExtra("IS_DEMO_MODE", true);
@@ -81,6 +81,8 @@ public class LoginActivity extends AppCompatActivity {
         loginData.put("username", username);
         loginData.put("password", password);
 
+        System.out.println("DEBUG - Login data: " + loginData);
+
         // Hacer llamada a la API real
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
         Call<Map<String, Object>> call = apiService.login(loginData);
@@ -88,21 +90,61 @@ public class LoginActivity extends AppCompatActivity {
         call.enqueue(new Callback<Map<String, Object>>() {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                System.out.println("DEBUG - Login response code: " + response.code());
+
                 if (response.isSuccessful() && response.body() != null) {
+                    System.out.println("DEBUG - Login success: " + response.body());
+
+                    // Guardar token y usuario
+                    Map<String, Object> data = response.body();
+                    String token = "";
+                    if (data.containsKey("token")) {
+                        token = (String) data.get("token");
+                        saveAuthToken(token);
+                        saveUsername(username);
+
+                        System.out.println("DEBUG - Token guardado: " + token);
+                    }
+
                     Toast.makeText(LoginActivity.this, "Login exitoso", Toast.LENGTH_SHORT).show();
 
                     Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
                     startActivity(intent);
                     finish();
                 } else {
-                    Toast.makeText(LoginActivity.this, "Credenciales incorrectas", Toast.LENGTH_SHORT).show();
+                    String errorMsg = "Error " + response.code();
+                    try {
+                        if (response.errorBody() != null) {
+                            String errorBody = response.errorBody().string();
+                            System.out.println("DEBUG - Login error: " + errorBody);
+                            errorMsg += ": " + errorBody;
+                        }
+                    } catch (Exception e) {
+                        System.out.println("DEBUG - Exception: " + e.getMessage());
+                    }
+                    Toast.makeText(LoginActivity.this, errorMsg, Toast.LENGTH_LONG).show();
                 }
             }
 
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                Toast.makeText(LoginActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                System.out.println("DEBUG - Login network error: " + t.getMessage());
+                Toast.makeText(LoginActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    private void saveAuthToken(String token) {
+        SharedPreferences prefs = getSharedPreferences("CodeSwapPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("auth_token", token);
+        editor.apply();
+    }
+
+    private void saveUsername(String username) {
+        SharedPreferences prefs = getSharedPreferences("CodeSwapPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("username", username);
+        editor.apply();
     }
 }

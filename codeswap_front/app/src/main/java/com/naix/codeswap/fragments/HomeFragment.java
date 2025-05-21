@@ -16,6 +16,12 @@ import com.naix.codeswap.R;
 import com.naix.codeswap.api.ApiClient;
 import com.naix.codeswap.api.ApiService;
 
+import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class HomeFragment extends Fragment {
 
     private TextView tvPotentialMatchesCount;
@@ -44,22 +50,49 @@ public class HomeFragment extends Fragment {
         // Inicializar API service
         apiService = ApiClient.getClient().create(ApiService.class);
 
-        // Cargar datos simulados
-        loadMockData();
+        loadRealData();
 
-        // Configurar listeners
         btnFindMatches.setOnClickListener(v -> {
             Toast.makeText(getContext(), "Buscando nuevos matches...", Toast.LENGTH_SHORT).show();
-            // En una app real, aquí harías una llamada a la API
-            // apiService.refreshMatches().enqueue(...);
         });
     }
 
     private void loadMockData() {
-        // Aquí cargaríamos datos de la API en una app real
-        // Para demo, usar valores simulados
         tvPotentialMatchesCount.setText("3");
         tvNormalMatchesCount.setText("5");
         tvCompletedSessionsCount.setText("2");
+    }
+    private void loadRealData() {
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        Call<Map<String, Object>> call = apiService.getProfile();
+
+        call.enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    try {
+                        Map<String, Object> data = response.body();
+                        Map<String, Object> user = (Map<String, Object>) data.get("user");
+                        String username = (String) user.get("username");
+
+                        // Mostrar username real en algún TextView
+                        Toast.makeText(getContext(), "¡Bienvenido, " + username + "!", Toast.LENGTH_SHORT).show();
+
+                        // Cargar datos
+                        loadMockData();
+                    } catch (Exception e) {
+                        System.out.println("ERROR parsing profile: " + e.getMessage());
+                        loadMockData();
+                    }
+                } else {
+                    loadMockData();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                loadMockData();
+            }
+        });
     }
 }
