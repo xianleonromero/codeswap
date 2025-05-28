@@ -20,7 +20,13 @@ import com.naix.codeswap.api.ApiService;
 import com.naix.codeswap.models.ProgrammingLanguage;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class EditProfileActivity extends AppCompatActivity {
 
@@ -108,44 +114,71 @@ public class EditProfileActivity extends AppCompatActivity {
     }
 
     private void loadProfileData() {
-        // En una app real, cargaríamos los datos del usuario actual desde la API
-        // Por ahora, usamos datos simulados
-        etFullName.setText("Juan Pérez");
-        etEmail.setText("juan.dev@example.com");
-        etBio.setText("Desarrollador full-stack con 5 años de experiencia. Especializado en Java y Spring Boot, con interés en aprender nuevas tecnologías frontend.");
+        Call<Map<String, Object>> call = apiService.getProfile();
 
-        // Cargar habilidades ofrecidas
-        ProgrammingLanguage java = new ProgrammingLanguage();
-        java.setId(1);
-        java.setName("Java");
+        call.enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    try {
+                        Map<String, Object> data = response.body();
+                        Map<String, Object> user = (Map<String, Object>) data.get("user");
 
-        ProgrammingLanguage python = new ProgrammingLanguage();
-        python.setId(2);
-        python.setName("Python");
+                        // Cargar datos básicos
+                        String firstName = (String) user.get("first_name");
+                        String lastName = (String) user.get("last_name");
+                        String fullName = (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
+                        etFullName.setText(fullName.trim());
+                        etEmail.setText((String) user.get("email"));
 
-        ProgrammingLanguage spring = new ProgrammingLanguage();
-        spring.setId(3);
-        spring.setName("Spring Boot");
+                        String bio = "";
+                        if (data.containsKey("bio") && data.get("bio") != null) {
+                            bio = (String) data.get("bio");
+                        }
+                        etBio.setText(bio);
 
-        offeredSkills.add(java);
-        offeredSkills.add(python);
-        offeredSkills.add(spring);
+                        // Cargar habilidades ofrecidas
+                        offeredSkills.clear();
+                        if (data.containsKey("offered_skills")) {
+                            List<Map<String, Object>> offered = (List<Map<String, Object>>) data.get("offered_skills");
+                            for (Map<String, Object> skill : offered) {
+                                Map<String, Object> lang = (Map<String, Object>) skill.get("language");
+                                ProgrammingLanguage pl = new ProgrammingLanguage();
+                                pl.setId(((Double) lang.get("id")).intValue());
+                                pl.setName((String) lang.get("name"));
+                                offeredSkills.add(pl);
+                            }
+                        }
+                        offeredAdapter.notifyDataSetChanged();
 
-        offeredAdapter.notifyDataSetChanged();
+                        // Cargar habilidades deseadas
+                        wantedSkills.clear();
+                        if (data.containsKey("wanted_skills")) {
+                            List<Map<String, Object>> wanted = (List<Map<String, Object>>) data.get("wanted_skills");
+                            for (Map<String, Object> skill : wanted) {
+                                Map<String, Object> lang = (Map<String, Object>) skill.get("language");
+                                ProgrammingLanguage pl = new ProgrammingLanguage();
+                                pl.setId(((Double) lang.get("id")).intValue());
+                                pl.setName((String) lang.get("name"));
+                                wantedSkills.add(pl);
+                            }
+                        }
+                        wantedAdapter.notifyDataSetChanged();
 
-        // Cargar habilidades buscadas
-        ProgrammingLanguage react = new ProgrammingLanguage();
-        react.setId(4);
-        react.setName("React");
+                    } catch (Exception e) {
+                        Toast.makeText(EditProfileActivity.this, "Error al procesar datos del perfil", Toast.LENGTH_SHORT).show();
+                        e.printStackTrace();
+                    }
+                } else {
+                    Toast.makeText(EditProfileActivity.this, "Error al cargar perfil", Toast.LENGTH_SHORT).show();
+                }
+            }
 
-        ProgrammingLanguage angular = new ProgrammingLanguage();
-        angular.setId(5);
-        angular.setName("Angular");
-
-        wantedSkills.add(react);
-        wantedSkills.add(angular);
-
-        wantedAdapter.notifyDataSetChanged();
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                Toast.makeText(EditProfileActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showSkillSelectionDialog(boolean isOffered) {
@@ -169,7 +202,6 @@ public class EditProfileActivity extends AppCompatActivity {
     }
 
     private void saveProfileChanges() {
-        // En una app real, aquí enviaríamos los cambios a la API
         String fullName = etFullName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String bio = etBio.getText().toString().trim();
@@ -180,8 +212,35 @@ public class EditProfileActivity extends AppCompatActivity {
             return;
         }
 
-        Toast.makeText(this, "Cambios guardados correctamente", Toast.LENGTH_SHORT).show();
-        finish();
+        // Preparar datos para enviar
+        Map<String, Object> profileData = new HashMap<>();
+
+        String[] nameParts = fullName.split(" ", 2);
+        profileData.put("first_name", nameParts[0]);
+        if (nameParts.length > 1) {
+            profileData.put("last_name", nameParts[1]);
+        }
+
+        profileData.put("email", email);
+        profileData.put("bio", bio);
+
+        Call<Map<String, Object>> call = apiService.updateProfile(profileData);
+        call.enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(EditProfileActivity.this, "Cambios guardados correctamente", Toast.LENGTH_SHORT).show();
+                    finish();
+                } else {
+                    Toast.makeText(EditProfileActivity.this, "Error al guardar cambios", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                Toast.makeText(EditProfileActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override

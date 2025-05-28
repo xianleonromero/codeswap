@@ -102,6 +102,12 @@ public class LoginActivity extends AppCompatActivity {
                         token = (String) data.get("token");
                         saveAuthToken(token);
                         saveUsername(username);
+                        // Guardar user_id si está disponible
+                        if (data.containsKey("user_id")) {
+                            Object userIdObj = data.get("user_id");
+                            int userId = userIdObj instanceof Double ? ((Double) userIdObj).intValue() : (Integer) userIdObj;
+                            saveUserId(userId);
+                        }
 
                         System.out.println("DEBUG - Token guardado: " + token);
                     }
@@ -132,6 +138,13 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.makeText(LoginActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    private void saveUserId(int userId) {
+        SharedPreferences prefs = getSharedPreferences("CodeSwapPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putInt("user_id", userId);
+        editor.apply();
     }
 
     private void saveAuthToken(String token) {

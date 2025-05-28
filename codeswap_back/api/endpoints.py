@@ -13,6 +13,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.forms.models import model_to_dict
+from datetime import datetime
 
 
 @api_view(['GET'])
@@ -278,48 +279,80 @@ def normal_matches(request):
     
     return Response(matches_data)
 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def refresh_matches(request):
+    # Limpiar matches potenciales anteriores
     Match.objects.filter(user1=request.user, match_type=Match.TYPE_POTENTIAL).delete()
 
     user_offered = OfferedSkill.objects.filter(user=request.user)
     user_wanted = WantedSkill.objects.filter(user=request.user)
 
-    potential_matches = []
-    
+    potential_users = set()
+
+    # Buscar usuarios que quieren lo que yo ofrezco Y ofrecen lo que yo quiero
     for offered_skill in user_offered:
-        potential_users = WantedSkill.objects.filter(
+        # Usuarios que quieren esta habilidad
+        users_wanting_this = WantedSkill.objects.filter(
             language=offered_skill.language
-        ).exclude(user=request.user)
-        
-        for potential in potential_users:
+        ).exclude(user=request.user).values_list('user', flat=True)
+
+        for user_id in users_wanting_this:
+            # Verificar si este usuario ofrece algo que yo quiero
             for wanted_skill in user_wanted:
                 if OfferedSkill.objects.filter(
-                    user=potential.user,
-                    language=wanted_skill.language
+                        user_id=user_id,
+                        language=wanted_skill.language
                 ).exists():
+                    # Verificar que no existe ya un match normal
                     if not Match.objects.filter(
-                        Q(user1=request.user, user2=potential.user) | 
-                        Q(user1=potential.user, user2=request.user),
-                        match_type=Match.TYPE_NORMAL
+                            Q(user1=request.user, user2_id=user_id) |
+                            Q(user1_id=user_id, user2=request.user),
+                            match_type=Match.TYPE_NORMAL
                     ).exists():
-                        potential_matches.append(potential.user)
+                        potential_users.add(user_id)
                         break
-    
 
-    for user in set(potential_matches):
-        score = random.uniform(65, 95)
-        
+    # Crear matches potenciales con puntuaciones calculadas
+    matches_created = 0
+    for user_id in potential_users:
+        other_user = User.objects.get(id=user_id)
+
+        # Calcular compatibilidad basada en coincidencias de habilidades
+        my_offers = set(user_offered.values_list('language_id', flat=True))
+        my_wants = set(user_wanted.values_list('language_id', flat=True))
+
+        other_offers = set(OfferedSkill.objects.filter(user=other_user).values_list('language_id', flat=True))
+        other_wants = set(WantedSkill.objects.filter(user=other_user).values_list('language_id', flat=True))
+
+        # Coincidencias: lo que yo ofrezco y él quiere + lo que él ofrece y yo quiero
+        matches_i_can_teach = len(my_offers.intersection(other_wants))
+        matches_he_can_teach = len(other_offers.intersection(my_wants))
+
+        total_matches = matches_i_can_teach + matches_he_can_teach
+        max_possible = len(my_offers) + len(my_wants)
+
+        # Calcular puntuación de compatibilidad (65-95%)
+        if max_possible > 0:
+            base_score = (total_matches / max_possible) * 30 + 65  # 65-95%
+            # Añadir factor aleatorio pequeño
+            compatibility_score = min(95.0, base_score + random.uniform(-5, 5))
+        else:
+            compatibility_score = random.uniform(65, 85)
+
         Match.objects.create(
             user1=request.user,
-            user2=user,
+            user2=other_user,
             match_type=Match.TYPE_POTENTIAL,
-            compatibility_score=score
+            compatibility_score=compatibility_score
         )
-    
-    return Response({"message": "Matches refreshed successfully"})
+        matches_created += 1
 
+    return Response({
+        "message": "Matches refreshed successfully",
+        "matches_found": matches_created
+    })
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -414,7 +447,7 @@ def create_session(request):
         teacher=request.user,
         student=student,
         language=language,
-        date_time=request.data['date_time'],
+        date_time=timezone.datetime.fromisoformat(request.data['date_time'].replace('Z', '+00:00')),
         duration_minutes=request.data.get('duration_minutes', 60),
         status=Session.STATUS_PENDING
     )

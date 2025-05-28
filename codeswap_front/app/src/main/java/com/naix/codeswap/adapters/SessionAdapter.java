@@ -1,6 +1,7 @@
 package com.naix.codeswap.adapters;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,7 +25,8 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.SessionV
     private Context context;
     private OnSessionActionListener listener;
     private boolean isPastSessions;
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+    private SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+    private SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
 
     public interface OnSessionActionListener {
         void onAcceptSession(Session session);
@@ -49,11 +51,23 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.SessionV
     @Override
     public void onBindViewHolder(@NonNull SessionViewHolder holder, int position) {
         Session session = sessions.get(position);
-        boolean isTeacher = true; // En una app real, esto dependería del usuario actual
+        // Obtener ID del usuario actual desde SharedPreferences
+        SharedPreferences prefs = context.getSharedPreferences("CodeSwapPrefs", Context.MODE_PRIVATE);
+        int currentUserId = prefs.getInt("user_id", -1);
+        boolean isTeacher = (session.getTeacher() != null && session.getTeacher().getId() == currentUserId);
 
         // Configurar información básica
         holder.tvLanguage.setText(session.getLanguage().getName());
-        holder.tvDateTime.setText(dateFormat.format(session.getDateTime()));
+        try {
+            // Si la fecha viene como String del backend
+            if (session.getDateTime() != null) {
+                holder.tvDateTime.setText(displayFormat.format(session.getDateTime()));
+            } else {
+                holder.tvDateTime.setText("Fecha no disponible");
+            }
+        } catch (Exception e) {
+            holder.tvDateTime.setText("Fecha no disponible");
+        }
         holder.tvDuration.setText(session.getDurationMinutes() + " minutos");
 
         // Configurar usuario (estudiante o profesor)

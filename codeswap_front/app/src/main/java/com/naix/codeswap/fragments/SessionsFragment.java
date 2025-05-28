@@ -99,12 +99,8 @@ public class SessionsFragment extends Fragment implements SessionAdapter.OnSessi
 
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
-                // No es necesario hacer nada
             }
         });
-
-        // Asegurarse de mostrar los datos iniciales
-        // Esta línea es clave, añádela justo después de cargar los datos
         adapter.updateData(upcomingSessions);
         updateEmptyState(upcomingSessions);
     }
@@ -112,214 +108,70 @@ public class SessionsFragment extends Fragment implements SessionAdapter.OnSessi
     private void loadUpcomingSessions() {
         showLoading(true);
 
-        // En una aplicación real, esta llamada usaría la API real
-        // Para demo, usamos datos simulados
-        simulateUpcomingSessions();
-
-        // Ejemplo de cómo sería con la API real:
-        /*
-        apiService.getUpcomingSessions().enqueue(new Callback<List<Session>>() {
+        apiService.getUpcomingSessions().enqueue(new Callback<List<Map<String, Object>>>() {
             @Override
-            public void onResponse(Call<List<Session>> call, Response<List<Session>> response) {
-                showLoading(false);
+            public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    upcomingSessions = response.body();
+                    upcomingSessions = new ArrayList<>();
+                    for (Map<String, Object> sessionData : response.body()) {
+                        upcomingSessions.add(Session.fromMap(sessionData));
+                    }
                     adapter.updateData(upcomingSessions);
                     updateEmptyState(upcomingSessions);
                 } else {
                     Toast.makeText(getContext(), "Error al cargar las sesiones", Toast.LENGTH_SHORT).show();
+                    upcomingSessions = new ArrayList<>();
+                    adapter.updateData(upcomingSessions);
+                    updateEmptyState(upcomingSessions);
                 }
+                // Cargar sesiones pasadas después
+                loadPastSessions();
             }
-
             @Override
-            public void onFailure(Call<List<Session>> call, Throwable t) {
+            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
                 showLoading(false);
                 Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                upcomingSessions = new ArrayList<>();
+                adapter.updateData(upcomingSessions);
+                updateEmptyState(upcomingSessions);
+                loadPastSessions();
             }
         });
-        */
     }
 
     private void loadPastSessions() {
-        showLoading(true);
-
-        // En una aplicación real, esta llamada usaría la API real
-        // Para demo, usamos datos simulados
-        simulatePastSessions();
-
-        // Ejemplo de cómo sería con la API real:
-        /*
-        apiService.getPastSessions().enqueue(new Callback<List<Session>>() {
+        apiService.getPastSessions().enqueue(new Callback<List<Map<String, Object>>>() {
             @Override
-            public void onResponse(Call<List<Session>> call, Response<List<Session>> response) {
-                showLoading(false);
+            public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    pastSessions = response.body();
+                    pastSessions = new ArrayList<>();
+                    for (Map<String, Object> sessionData : response.body()) {
+                        pastSessions.add(Session.fromMap(sessionData));
+                    }
                     // Si estamos en la pestaña de sesiones pasadas, actualizar la vista
                     if (tabLayout.getSelectedTabPosition() == 1) {
                         adapter.updateData(pastSessions);
                         updateEmptyState(pastSessions);
                     }
                 } else {
-                    Toast.makeText(getContext(), "Error al cargar las sesiones", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Error al cargar las sesiones pasadas", Toast.LENGTH_SHORT).show();
+                    pastSessions = new ArrayList<>();
+                    if (tabLayout.getSelectedTabPosition() == 1) {
+                        adapter.updateData(pastSessions);
+                        updateEmptyState(pastSessions);
+                    }
                 }
             }
-
             @Override
-            public void onFailure(Call<List<Session>> call, Throwable t) {
-                showLoading(false);
+            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
                 Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                pastSessions = new ArrayList<>();
+                if (tabLayout.getSelectedTabPosition() == 1) {
+                    adapter.updateData(pastSessions);
+                    updateEmptyState(pastSessions);
+                }
             }
         });
-        */
-    }
-
-    private void simulateUpcomingSessions() {
-        // Simulamos algunas sesiones próximas
-        upcomingSessions = new ArrayList<>();
-
-        User currentUser = new User();
-        currentUser.setId(1);
-        currentUser.setUsername("JuanDev");
-        currentUser.setFullName("Juan Pérez");
-
-        for (int i = 1; i <= 3; i++) {
-            Session session = new Session();
-            session.setId(i);
-
-            // Alternamos entre ser profesor y estudiante
-            if (i % 2 == 0) {
-                User otherUser = new User();
-                otherUser.setId(i + 100);
-                otherUser.setUsername("Estudiante" + i);
-                otherUser.setFullName("Estudiante Número " + i);
-
-                session.setTeacher(currentUser);
-                session.setStudent(otherUser);
-            } else {
-                User otherUser = new User();
-                otherUser.setId(i + 200);
-                otherUser.setUsername("Profesor" + i);
-                otherUser.setFullName("Profesor Número " + i);
-
-                session.setTeacher(otherUser);
-                session.setStudent(currentUser);
-            }
-
-            // Crear lenguaje para la sesión
-            ProgrammingLanguage language = new ProgrammingLanguage();
-            language.setId(i);
-
-            switch (i) {
-                case 1:
-                    language.setName("JavaScript");
-                    break;
-                case 2:
-                    language.setName("Python");
-                    break;
-                case 3:
-                    language.setName("Java");
-                    break;
-                default:
-                    language.setName("Kotlin");
-            }
-
-            session.setLanguage(language);
-
-            // Configurar fecha y estado
-            Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.DAY_OF_MONTH, i + 1);  // Próximos días
-            calendar.set(Calendar.HOUR_OF_DAY, 14 + i);  // Diferentes horas
-            session.setDateTime(calendar.getTime());
-
-            session.setDurationMinutes(60);
-
-            // Diferentes estados
-            if (i == 1) {
-                session.setStatus(Session.STATUS_PENDING);
-            } else if (i == 2) {
-                session.setStatus(Session.STATUS_CONFIRMED);
-            } else {
-                session.setStatus(Session.STATUS_PENDING);
-            }
-
-            upcomingSessions.add(session);
-        }
-
-        showLoading(false);
-        adapter.updateData(upcomingSessions);
-        updateEmptyState(upcomingSessions);
-
-        loadPastSessions();
-    }
-
-    private void simulatePastSessions() {
-        // Simulamos sesiones pasadas
-        pastSessions = new ArrayList<>();
-
-        User currentUser = new User();
-        currentUser.setId(1);
-        currentUser.setUsername("JuanDev");
-        currentUser.setFullName("Juan Pérez");
-
-        for (int i = 1; i <= 2; i++) {
-            Session session = new Session();
-            session.setId(i + 100);
-
-            if (i % 2 == 0) {
-                User otherUser = new User();
-                otherUser.setId(i + 300);
-                otherUser.setUsername("ExEstudiante" + i);
-                otherUser.setFullName("Estudiante Pasado " + i);
-
-                session.setTeacher(currentUser);
-                session.setStudent(otherUser);
-            } else {
-                User otherUser = new User();
-                otherUser.setId(i + 400);
-                otherUser.setUsername("ExProfesor" + i);
-                otherUser.setFullName("Profesor Pasado " + i);
-
-                session.setTeacher(otherUser);
-                session.setStudent(currentUser);
-            }
-
-            // Crear lenguaje para la sesión
-            ProgrammingLanguage language = new ProgrammingLanguage();
-            language.setId(i + 10);
-
-            if (i == 1) {
-                language.setName("C#");
-            } else {
-                language.setName("Swift");
-            }
-
-            session.setLanguage(language);
-
-            // Configurar fecha pasada y estado
-            Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.DAY_OF_MONTH, -i * 3);  // Días pasados
-            session.setDateTime(calendar.getTime());
-
-            session.setDurationMinutes(45 + i * 15);
-
-            // Diferentes estados para sesiones pasadas
-            if (i == 1) {
-                session.setStatus(Session.STATUS_COMPLETED);
-            } else {
-                session.setStatus(Session.STATUS_CANCELLED);
-            }
-
-            pastSessions.add(session);
-        }
-
-        showLoading(false);
-
-        // Si estamos en la pestaña de sesiones pasadas, actualizar la vista
-        if (tabLayout != null && tabLayout.getSelectedTabPosition() == 1) {
-            adapter.updateData(pastSessions);
-            updateEmptyState(pastSessions);
-        }
     }
 
 
@@ -352,12 +204,9 @@ public class SessionsFragment extends Fragment implements SessionAdapter.OnSessi
         Map<String, String> statusUpdate = new HashMap<>();
         statusUpdate.put("status", newStatus);
 
-        // En una app real, harías la llamada a la API
-        // Ejemplo:
-        /*
-        apiService.updateSessionStatus(session.getId(), statusUpdate).enqueue(new Callback<Session>() {
+        apiService.updateSessionStatus(session.getId(), statusUpdate).enqueue(new Callback<Map<String, Object>>() {
             @Override
-            public void onResponse(Call<Session> call, Response<Session> response) {
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     // Actualizar la sesión en la lista local
                     session.setStatus(newStatus);
@@ -367,16 +216,11 @@ public class SessionsFragment extends Fragment implements SessionAdapter.OnSessi
                     Toast.makeText(getContext(), "Error al actualizar la sesión", Toast.LENGTH_SHORT).show();
                 }
             }
-
             @Override
-            public void onFailure(Call<Session> call, Throwable t) {
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
                 Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
             }
         });
-        */
-
-        // Para la demo, simplemente actualizamos la UI
-        Toast.makeText(getContext(), "Sesión " + (newStatus.equals(Session.STATUS_CONFIRMED) ? "aceptada" : "rechazada"), Toast.LENGTH_SHORT).show();
     }
 
     @Override

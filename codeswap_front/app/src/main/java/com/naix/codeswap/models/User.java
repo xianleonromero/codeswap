@@ -3,6 +3,7 @@ package com.naix.codeswap.models;
 import java.util.List;
 
 public class User {
+    public User(){}
     private int id;
     private String username;
     private String fullName;

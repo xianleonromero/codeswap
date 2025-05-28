@@ -29,10 +29,10 @@ public interface ApiService {
     Call<List<Match>> getMatches();
 
     @GET("matches/potential/")
-    Call<List<Match>> getPotentialMatches();
+    Call<List<Map<String, Object>>> getPotentialMatches();
 
     @GET("matches/normal/")
-    Call<List<Match>> getNormalMatches();
+    Call<List<Map<String, Object>>> getNormalMatches();
 
     @POST("matches/refresh/")
     Call<Void> refreshMatches();
@@ -42,16 +42,16 @@ public interface ApiService {
     Call<List<Session>> getSessions();
 
     @GET("sessions/upcoming/")
-    Call<List<Session>> getUpcomingSessions();
+    Call<List<Map<String, Object>>> getUpcomingSessions();
 
     @GET("sessions/past/")
-    Call<List<Session>> getPastSessions();
+    Call<List<Map<String, Object>>> getPastSessions();
 
     @POST("sessions/")
-    Call<Session> createSession(@Body Map<String, Object> sessionData);
+    Call<Map<String, Object>> createSession(@Body Map<String, Object> sessionData);
 
     @PUT("sessions/{id}/")
-    Call<Session> updateSessionStatus(@Path("id") int sessionId, @Body Map<String, String> statusUpdate);
+    Call<Map<String, Object>> updateSessionStatus(@Path("id") int sessionId, @Body Map<String, String> statusUpdate);
 
     @POST("auth/login/")
     Call<Map<String, Object>> login(@Body Map<String, String> credentials);
@@ -61,4 +61,7 @@ public interface ApiService {
 
     @GET("profile/")
     Call<Map<String, Object>> getProfile();
+
+    @PUT("profile/")
+    Call<Map<String, Object>> updateProfile(@Body Map<String, Object> profileData);
 }

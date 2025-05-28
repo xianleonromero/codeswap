@@ -54,6 +54,24 @@ public class HomeFragment extends Fragment {
 
         btnFindMatches.setOnClickListener(v -> {
             Toast.makeText(getContext(), "Buscando nuevos matches...", Toast.LENGTH_SHORT).show();
+            ApiService apiService = ApiClient.getClient().create(ApiService.class);
+            Call<Void> call = apiService.refreshMatches();
+
+            call.enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) {
+                        Toast.makeText(getContext(), "¡Nuevos matches encontrados!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "Error al buscar matches", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
+            });
         });
     }
 
