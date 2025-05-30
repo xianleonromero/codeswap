@@ -57,12 +57,13 @@ public class HomeFragment extends Fragment {
             Toast.makeText(getContext(), "Buscando nuevos matches...", Toast.LENGTH_SHORT).show();
             ApiService apiService = ApiClient.getClient().create(ApiService.class);
             Call<Void> call = apiService.refreshMatches();
-
             call.enqueue(new Callback<Void>() {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) {
-                        Toast.makeText(getContext(), "¡Nuevos matches encontrados!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "¡Busqueda completada! Ve a la sección Matches", Toast.LENGTH_SHORT).show();
+                        // Recargar estadísticas
+                        loadRealData();
                     } else {
                         Toast.makeText(getContext(), "Error al buscar matches", Toast.LENGTH_SHORT).show();
                     }
@@ -81,11 +82,11 @@ public class HomeFragment extends Fragment {
         tvNormalMatchesCount.setText("0");
         tvCompletedSessionsCount.setText("0");
 
+        // Cargar solo matches potenciales para simplificar
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        Call<List<Map<String, Object>>> call = apiService.getPotentialMatches();
 
-        // Cargar matches potenciales
-        Call<List<Map<String, Object>>> potentialCall = apiService.getPotentialMatches();
-        potentialCall.enqueue(new Callback<List<Map<String, Object>>>() {
+        call.enqueue(new Callback<List<Map<String, Object>>>() {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -95,45 +96,7 @@ public class HomeFragment extends Fragment {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                // Mantener en 0
-            }
-        });
-
-        // Cargar matches normales
-        Call<List<Map<String, Object>>> normalCall = apiService.getNormalMatches();
-        normalCall.enqueue(new Callback<List<Map<String, Object>>>() {
-            @Override
-            public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    tvNormalMatchesCount.setText(String.valueOf(response.body().size()));
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                // Mantener en 0
-            }
-        });
-
-        // Cargar sesiones pasadas para contar las completadas
-        Call<List<Map<String, Object>>> sessionsCall = apiService.getPastSessions();
-        sessionsCall.enqueue(new Callback<List<Map<String, Object>>>() {
-            @Override
-            public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    int completedCount = 0;
-                    for (Map<String, Object> sessionData : response.body()) {
-                        if ("COMPLETED".equals(sessionData.get("status"))) {
-                            completedCount++;
-                        }
-                    }
-                    tvCompletedSessionsCount.setText(String.valueOf(completedCount));
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                // Mantener en 0
+                // Mantener en 0, no mostrar errores
             }
         });
     }

@@ -23,7 +23,7 @@ public interface ApiService {
     Call<User> getUser(@Path("id") int userId);
 
     @GET("languages/")
-    Call<List<ProgrammingLanguage>> getProgrammingLanguages();
+    Call<List<Map<String, Object>>> getProgrammingLanguages();
 
     @GET("matches/")
     Call<List<Match>> getMatches();

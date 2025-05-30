@@ -183,13 +183,25 @@ public class EditProfileActivity extends AppCompatActivity {
 
     private void showSkillSelectionDialog(boolean isOffered) {
         // Cargar lenguajes disponibles desde la API
-        Call<List<ProgrammingLanguage>> call = apiService.getProgrammingLanguages();
+        Call<List<Map<String, Object>>> call = apiService.getProgrammingLanguages();
 
-        call.enqueue(new Callback<List<ProgrammingLanguage>>() {
+        call.enqueue(new Callback<List<Map<String, Object>>>() {
             @Override
-            public void onResponse(Call<List<ProgrammingLanguage>> call, Response<List<ProgrammingLanguage>> response) {
+            public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    List<ProgrammingLanguage> availableLanguages = response.body();
+                    List<Map<String, Object>> languagesData = response.body();
+                    List<ProgrammingLanguage> availableLanguages = new ArrayList<>();
+
+                    // Convertir datos de la API a objetos ProgrammingLanguage
+                    for (Map<String, Object> langData : languagesData) {
+                        ProgrammingLanguage lang = new ProgrammingLanguage();
+                        lang.setId(((Double) langData.get("id")).intValue());
+                        lang.setName((String) langData.get("name"));
+                        if (langData.containsKey("icon")) {
+                            lang.setIcon((String) langData.get("icon"));
+                        }
+                        availableLanguages.add(lang);
+                    }
 
                     // Crear array de nombres para el diálogo
                     String[] languageNames = new String[availableLanguages.size()];
@@ -231,13 +243,13 @@ public class EditProfileActivity extends AppCompatActivity {
                     builder.show();
 
                 } else {
-                    Toast.makeText(EditProfileActivity.this, "Error al cargar lenguajes", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(EditProfileActivity.this, "Error al cargar lenguajes: " + response.code(), Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
-            public void onFailure(Call<List<ProgrammingLanguage>> call, Throwable t) {
-                Toast.makeText(EditProfileActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
+                Toast.makeText(EditProfileActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }

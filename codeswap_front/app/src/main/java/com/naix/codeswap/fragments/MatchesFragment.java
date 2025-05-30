@@ -140,8 +140,11 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
                 System.out.println("Network error: " + t.getMessage());
-                // Fallback a datos simulados
-                simulatePotentialMatches();
+                potentialMatches = new ArrayList<>();
+                if (tabLayout.getSelectedTabPosition() == 0) {
+                    adapter.updateData(potentialMatches);
+                    updateEmptyState(potentialMatches);
+                }
                 loadNormalMatchesFromApi();
             }
         });
@@ -153,6 +156,7 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
         call.enqueue(new Callback<List<Map<String, Object>>>() {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
+                showLoading(false);
                 if (response.isSuccessful() && response.body() != null) {
                     normalMatches = new ArrayList<>();
                     for (Map<String, Object> matchData : response.body()) {
@@ -182,120 +186,6 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
                 }
             }
         });
-    }
-
-    // Para simular datos en la demostración
-    private void simulatePotentialMatches() {
-        // Simulamos algunos matches potenciales
-        potentialMatches = new ArrayList<>();
-
-        // Crear usuario simulado
-        User user1 = new User();
-        user1.setId(1);
-        user1.setUsername("JuanDev");
-
-        for (int i = 1; i <= 3; i++) {
-            User user2 = new User();
-            user2.setId(i + 10);
-            user2.setUsername("Desarrollador" + i);
-
-            Match match = new Match();
-            match.setId(i);
-            match.setUser1(user1);
-            match.setUser2(user2);
-            match.setMatchType("POTENTIAL");
-            match.setCompatibilityScore(85 + i);
-            match.setCreatedAt(new Date());
-
-            // Añadir lenguajes ofrecidos
-            List<ProgrammingLanguage> offered = new ArrayList<>();
-            ProgrammingLanguage java = new ProgrammingLanguage();
-            java.setId(1);
-            java.setName("Java");
-
-            ProgrammingLanguage python = new ProgrammingLanguage();
-            python.setId(2);
-            python.setName("Python");
-
-            offered.add(java);
-            offered.add(python);
-            match.setUser1Offers(offered);
-
-            // Añadir lenguajes buscados
-            List<ProgrammingLanguage> wanted = new ArrayList<>();
-            ProgrammingLanguage kotlin = new ProgrammingLanguage();
-            kotlin.setId(3);
-            kotlin.setName("Kotlin");
-
-            ProgrammingLanguage flutter = new ProgrammingLanguage();
-            flutter.setId(4);
-            flutter.setName("Flutter");
-
-            wanted.add(kotlin);
-            if (i % 2 == 0) {
-                wanted.add(flutter);
-            }
-            match.setUser2Wants(wanted);
-
-            potentialMatches.add(match);
-        }
-
-        showLoading(false);
-        adapter.updateData(potentialMatches);
-        updateEmptyState(potentialMatches);
-
-        loadMatches();
-    }
-
-    private void simulateNormalMatches() {
-        // Simulamos matches normales
-        normalMatches = new ArrayList<>();
-
-        User user1 = new User();
-        user1.setId(1);
-        user1.setUsername("JuanDev");
-
-        for (int i = 1; i <= 4; i++) {
-            User user2 = new User();
-            user2.setId(i + 20);
-            user2.setUsername("Programador" + i);
-
-            Match match = new Match();
-            match.setId(i + 100);
-            match.setUser1(user1);
-            match.setUser2(user2);
-            match.setMatchType("NORMAL");
-            match.setCompatibilityScore(70 + i);
-            match.setCreatedAt(new Date());
-
-            // Añadir lenguajes ofrecidos
-            List<ProgrammingLanguage> offered = new ArrayList<>();
-            ProgrammingLanguage react = new ProgrammingLanguage();
-            react.setId(5);
-            react.setName("React");
-
-            offered.add(react);
-            match.setUser1Offers(offered);
-
-            // Añadir lenguajes buscados
-            List<ProgrammingLanguage> wanted = new ArrayList<>();
-            ProgrammingLanguage angular = new ProgrammingLanguage();
-            angular.setId(6);
-            angular.setName("Angular");
-
-            wanted.add(angular);
-            match.setUser2Wants(wanted);
-
-            normalMatches.add(match);
-        }
-
-        showLoading(false);
-
-        // Si estamos en la pestaña de matches normales, actualizar la vista
-        if (tabLayout != null && tabLayout.getSelectedTabPosition() == 1) {
-            adapter.updateData(normalMatches);
-            updateEmptyState(normalMatches);
-        }
     }
 
     private void updateEmptyState(List<Match> matches) {

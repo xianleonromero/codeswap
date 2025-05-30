@@ -128,11 +128,11 @@ public class RegisterActivity extends AppCompatActivity {
     }
     private void testBackend() {
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        Call<List<ProgrammingLanguage>> call = apiService.getProgrammingLanguages();
+        Call<List<Map<String, Object>>> call = apiService.getProgrammingLanguages();
 
-        call.enqueue(new Callback<List<ProgrammingLanguage>>() {
+        call.enqueue(new Callback<List<Map<String, Object>>>() {
             @Override
-            public void onResponse(Call<List<ProgrammingLanguage>> call, Response<List<ProgrammingLanguage>> response) {
+            public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 System.out.println("TEST - Languages response: " + response.code());
                 if (response.isSuccessful() && response.body() != null) {
                     Toast.makeText(RegisterActivity.this, "Backend OK - " + response.body().size() + " lenguajes", Toast.LENGTH_SHORT).show();
@@ -142,7 +142,7 @@ public class RegisterActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<List<ProgrammingLanguage>> call, Throwable t) {
+            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
                 Toast.makeText(RegisterActivity.this, "No conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
