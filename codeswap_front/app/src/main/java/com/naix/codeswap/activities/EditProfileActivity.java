@@ -182,23 +182,64 @@ public class EditProfileActivity extends AppCompatActivity {
     }
 
     private void showSkillSelectionDialog(boolean isOffered) {
-        // En una app real, aquí mostrarías un diálogo para seleccionar una habilidad
-        // Por ahora, simplemente agregamos una habilidad de ejemplo
+        // Cargar lenguajes disponibles desde la API
+        Call<List<ProgrammingLanguage>> call = apiService.getProgrammingLanguages();
 
-        ProgrammingLanguage newSkill = new ProgrammingLanguage();
-        newSkill.setId(isOffered ? 10 : 20);
+        call.enqueue(new Callback<List<ProgrammingLanguage>>() {
+            @Override
+            public void onResponse(Call<List<ProgrammingLanguage>> call, Response<List<ProgrammingLanguage>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<ProgrammingLanguage> availableLanguages = response.body();
 
-        if (isOffered) {
-            newSkill.setName("Nueva habilidad ofrecida");
-            offeredSkills.add(newSkill);
-            offeredAdapter.notifyDataSetChanged();
-            Toast.makeText(this, "Habilidad añadida a ofrecidas", Toast.LENGTH_SHORT).show();
-        } else {
-            newSkill.setName("Nueva habilidad buscada");
-            wantedSkills.add(newSkill);
-            wantedAdapter.notifyDataSetChanged();
-            Toast.makeText(this, "Habilidad añadida a buscadas", Toast.LENGTH_SHORT).show();
-        }
+                    // Crear array de nombres para el diálogo
+                    String[] languageNames = new String[availableLanguages.size()];
+                    for (int i = 0; i < availableLanguages.size(); i++) {
+                        languageNames[i] = availableLanguages.get(i).getName();
+                    }
+
+                    // Mostrar diálogo de selección
+                    androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(EditProfileActivity.this);
+                    builder.setTitle(isOffered ? "Seleccionar habilidad ofrecida" : "Seleccionar habilidad buscada");
+                    builder.setItems(languageNames, (dialog, which) -> {
+                        ProgrammingLanguage selectedLanguage = availableLanguages.get(which);
+
+                        // Verificar si ya está en la lista
+                        List<ProgrammingLanguage> targetList = isOffered ? offeredSkills : wantedSkills;
+                        boolean alreadyExists = false;
+                        for (ProgrammingLanguage existing : targetList) {
+                            if (existing.getId() == selectedLanguage.getId()) {
+                                alreadyExists = true;
+                                break;
+                            }
+                        }
+
+                        if (alreadyExists) {
+                            Toast.makeText(EditProfileActivity.this, "Esta habilidad ya está en tu lista", Toast.LENGTH_SHORT).show();
+                        } else {
+                            // Añadir a la lista
+                            targetList.add(selectedLanguage);
+                            if (isOffered) {
+                                offeredAdapter.notifyDataSetChanged();
+                                Toast.makeText(EditProfileActivity.this, "Habilidad añadida a ofrecidas", Toast.LENGTH_SHORT).show();
+                            } else {
+                                wantedAdapter.notifyDataSetChanged();
+                                Toast.makeText(EditProfileActivity.this, "Habilidad añadida a buscadas", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                    builder.setNegativeButton("Cancelar", null);
+                    builder.show();
+
+                } else {
+                    Toast.makeText(EditProfileActivity.this, "Error al cargar lenguajes", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<ProgrammingLanguage>> call, Throwable t) {
+                Toast.makeText(EditProfileActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void saveProfileChanges() {
@@ -223,7 +264,24 @@ public class EditProfileActivity extends AppCompatActivity {
 
         profileData.put("email", email);
         profileData.put("bio", bio);
+// Preparar habilidades ofrecidas
+        List<Map<String, Object>> offeredSkillsData = new ArrayList<>();
+        for (ProgrammingLanguage skill : offeredSkills) {
+            Map<String, Object> skillData = new HashMap<>();
+            skillData.put("language_id", skill.getId());
+            skillData.put("level", 4); // Nivel por defecto
+            offeredSkillsData.add(skillData);
+        }
+        profileData.put("offered_skills", offeredSkillsData);
 
+// Preparar habilidades buscadas
+        List<Map<String, Object>> wantedSkillsData = new ArrayList<>();
+        for (ProgrammingLanguage skill : wantedSkills) {
+            Map<String, Object> skillData = new HashMap<>();
+            skillData.put("language_id", skill.getId());
+            wantedSkillsData.add(skillData);
+        }
+        profileData.put("wanted_skills", wantedSkillsData);
         Call<Map<String, Object>> call = apiService.updateProfile(profileData);
         call.enqueue(new Callback<Map<String, Object>>() {
             @Override

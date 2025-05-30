@@ -38,6 +38,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+
+
 public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchClickListener {
 
     private RecyclerView recyclerView;
@@ -102,12 +104,6 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
                 // No es necesario hacer nada
             }
         });
-
-        // Seleccionar la primera pestaña para cargar los datos inicialmente
-        if (tabLayout.getTabCount() > 0) {
-            adapter.updateData(potentialMatches);
-            updateEmptyState(potentialMatches);
-        }
     }
 
 

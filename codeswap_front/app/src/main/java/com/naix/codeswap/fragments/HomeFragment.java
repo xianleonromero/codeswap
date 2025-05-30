@@ -16,6 +16,7 @@ import com.naix.codeswap.R;
 import com.naix.codeswap.api.ApiClient;
 import com.naix.codeswap.api.ApiService;
 
+import java.util.List;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -74,42 +75,65 @@ public class HomeFragment extends Fragment {
             });
         });
     }
-
-    private void loadMockData() {
-        tvPotentialMatchesCount.setText("3");
-        tvNormalMatchesCount.setText("5");
-        tvCompletedSessionsCount.setText("2");
-    }
     private void loadRealData() {
+        // Mostrar 0 inicialmente
+        tvPotentialMatchesCount.setText("0");
+        tvNormalMatchesCount.setText("0");
+        tvCompletedSessionsCount.setText("0");
+
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        Call<Map<String, Object>> call = apiService.getProfile();
 
-        call.enqueue(new Callback<Map<String, Object>>() {
+        // Cargar matches potenciales
+        Call<List<Map<String, Object>>> potentialCall = apiService.getPotentialMatches();
+        potentialCall.enqueue(new Callback<List<Map<String, Object>>>() {
             @Override
-            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+            public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    try {
-                        Map<String, Object> data = response.body();
-                        Map<String, Object> user = (Map<String, Object>) data.get("user");
-                        String username = (String) user.get("username");
-
-                        // Mostrar username real en algún TextView
-                        Toast.makeText(getContext(), "¡Bienvenido, " + username + "!", Toast.LENGTH_SHORT).show();
-
-                        // Cargar datos
-                        loadMockData();
-                    } catch (Exception e) {
-                        System.out.println("ERROR parsing profile: " + e.getMessage());
-                        loadMockData();
-                    }
-                } else {
-                    loadMockData();
+                    tvPotentialMatchesCount.setText(String.valueOf(response.body().size()));
                 }
             }
 
             @Override
-            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                loadMockData();
+            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
+                // Mantener en 0
+            }
+        });
+
+        // Cargar matches normales
+        Call<List<Map<String, Object>>> normalCall = apiService.getNormalMatches();
+        normalCall.enqueue(new Callback<List<Map<String, Object>>>() {
+            @Override
+            public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    tvNormalMatchesCount.setText(String.valueOf(response.body().size()));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
+                // Mantener en 0
+            }
+        });
+
+        // Cargar sesiones pasadas para contar las completadas
+        Call<List<Map<String, Object>>> sessionsCall = apiService.getPastSessions();
+        sessionsCall.enqueue(new Callback<List<Map<String, Object>>>() {
+            @Override
+            public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    int completedCount = 0;
+                    for (Map<String, Object> sessionData : response.body()) {
+                        if ("COMPLETED".equals(sessionData.get("status"))) {
+                            completedCount++;
+                        }
+                    }
+                    tvCompletedSessionsCount.setText(String.valueOf(completedCount));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
+                // Mantener en 0
             }
         });
     }
