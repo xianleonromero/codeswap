@@ -111,6 +111,7 @@ public class SessionsFragment extends Fragment implements SessionAdapter.OnSessi
         apiService.getUpcomingSessions().enqueue(new Callback<List<Map<String, Object>>>() {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
+                showLoading(false);
                 if (response.isSuccessful() && response.body() != null) {
                     upcomingSessions = new ArrayList<>();
                     for (Map<String, Object> sessionData : response.body()) {
@@ -127,6 +128,7 @@ public class SessionsFragment extends Fragment implements SessionAdapter.OnSessi
                 // Cargar sesiones pasadas después
                 loadPastSessions();
             }
+
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
                 showLoading(false);
@@ -162,6 +164,7 @@ public class SessionsFragment extends Fragment implements SessionAdapter.OnSessi
                     }
                 }
             }
+
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
                 Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();

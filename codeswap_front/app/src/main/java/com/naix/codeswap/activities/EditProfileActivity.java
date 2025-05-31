@@ -188,8 +188,17 @@ public class EditProfileActivity extends AppCompatActivity {
         call.enqueue(new Callback<List<Map<String, Object>>>() {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
+                System.out.println("DEBUG - Languages response code: " + response.code());
+
                 if (response.isSuccessful() && response.body() != null) {
                     List<Map<String, Object>> languagesData = response.body();
+                    System.out.println("DEBUG - Languages data size: " + languagesData.size());
+                    System.out.println("DEBUG - Languages data: " + languagesData.toString());
+
+                    if (languagesData.isEmpty()) {
+                        Toast.makeText(EditProfileActivity.this, "No hay lenguajes disponibles en el servidor", Toast.LENGTH_LONG).show();
+                        return;
+                    }
                     List<ProgrammingLanguage> availableLanguages = new ArrayList<>();
 
                     // Convertir datos de la API a objetos ProgrammingLanguage

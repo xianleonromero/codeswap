@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 from django.db.models.signals import post_save
+from django.db.models.signals import post_migrate
+import random
 
 class ProgrammingLanguage(models.Model):
     name = models.CharField(max_length=100)
@@ -108,3 +110,109 @@ class Session(models.Model):
 
     def is_cancelled(self):
         return self.status == self.STATUS_CANCELLED
+
+
+@receiver(post_migrate)
+def create_initial_data(sender, **kwargs):
+    if sender.name == 'api':
+        print("🚀 Creating initial data...")
+
+        # Crear admin si no existe
+        from django.contrib.auth.models import User
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser('admin', 'admin@codeswap.com', 'codeswap2024')
+            print("✅ Admin user created: admin/codeswap2024")
+
+        # Crear lenguajes si no existen
+        languages_data = [
+            {'name': 'Java', 'icon': 'java_icon.png'},
+            {'name': 'Python', 'icon': 'python_icon.png'},
+            {'name': 'JavaScript', 'icon': 'js_icon.png'},
+            {'name': 'React', 'icon': 'react_icon.png'},
+            {'name': 'Angular', 'icon': 'angular_icon.png'},
+            {'name': 'Vue.js', 'icon': 'vue_icon.png'},
+            {'name': 'Spring Boot', 'icon': 'spring_icon.png'},
+            {'name': 'Django', 'icon': 'django_icon.png'},
+            {'name': 'Node.js', 'icon': 'node_icon.png'},
+            {'name': 'Kotlin', 'icon': 'kotlin_icon.png'},
+            {'name': 'Swift', 'icon': 'swift_icon.png'},
+            {'name': 'Flutter', 'icon': 'flutter_icon.png'},
+            {'name': 'C#', 'icon': 'csharp_icon.png'},
+            {'name': 'TypeScript', 'icon': 'ts_icon.png'},
+        ]
+
+        created_langs = 0
+        for lang_data in languages_data:
+            lang, created = ProgrammingLanguage.objects.get_or_create(
+                name=lang_data['name'],
+                defaults={'icon': lang_data['icon']}
+            )
+            if created:
+                created_langs += 1
+                print(f"✅ Created language: {lang.name}")
+
+        print(f"📝 Total languages in DB: {ProgrammingLanguage.objects.count()}")
+
+        # Crear usuarios de prueba si no existen
+        test_users = [
+            {
+                'username': 'juandev',
+                'email': 'juan@example.com',
+                'first_name': 'Juan',
+                'last_name': 'Pérez',
+                'offers': ['Java', 'Python', 'Spring Boot'],
+                'wants': ['React', 'Angular', 'JavaScript']
+            },
+            {
+                'username': 'mariacode',
+                'email': 'maria@example.com',
+                'first_name': 'María',
+                'last_name': 'García',
+                'offers': ['React', 'JavaScript', 'TypeScript'],
+                'wants': ['Python', 'Django', 'Java']
+            },
+            {
+                'username': 'carlostech',
+                'email': 'carlos@example.com',
+                'first_name': 'Carlos',
+                'last_name': 'López',
+                'offers': ['Angular', 'Node.js', 'TypeScript'],
+                'wants': ['Flutter', 'Kotlin', 'Swift']
+            }
+        ]
+
+        for user_data in test_users:
+            user, created = User.objects.get_or_create(
+                username=user_data['username'],
+                defaults={
+                    'email': user_data['email'],
+                    'first_name': user_data['first_name'],
+                    'last_name': user_data['last_name']
+                }
+            )
+
+            if created:
+                user.set_password('testpass123')
+                user.save()
+                print(f"✅ Created user: {user.username}")
+
+                # Añadir habilidades
+                for skill_name in user_data['offers']:
+                    try:
+                        language = ProgrammingLanguage.objects.get(name=skill_name)
+                        OfferedSkill.objects.get_or_create(
+                            user=user,
+                            language=language,
+                            defaults={'level': random.randint(3, 5)}
+                        )
+                    except ProgrammingLanguage.DoesNotExist:
+                        pass
+
+                for skill_name in user_data['wants']:
+                    try:
+                        language = ProgrammingLanguage.objects.get(name=skill_name)
+                        WantedSkill.objects.get_or_create(user=user, language=language)
+                    except ProgrammingLanguage.DoesNotExist:
+                        pass
+
+        print("🎉 Initial data creation complete!")
