@@ -282,7 +282,7 @@ public class EditProfileActivity extends AppCompatActivity {
 
         // Simple validación
         if (fullName.isEmpty() || email.isEmpty()) {
-            Toast.makeText(this, "Por favor, completa los campos obligatorios", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Por favor, añade tu nombre para continuar", Toast.LENGTH_SHORT).show();
             return;
         }
 
