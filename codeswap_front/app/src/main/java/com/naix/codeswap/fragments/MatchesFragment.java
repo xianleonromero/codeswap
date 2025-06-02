@@ -245,28 +245,91 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
 
     @Override
     public void onRequestSessionClick(Match match) {
-        // Crear datos para la sesión
-        Map<String, Object> sessionData = new HashMap<>();
-        sessionData.put("student_id", match.getUser2().getId());
+        // Crear diálogo para seleccionar fecha y hora
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(getContext());
+        builder.setTitle("Solicitar sesión con " + match.getUser2().getUsername());
 
-        // Usar el primer lenguaje que ofrecemos
-        if (!match.getUser1Offers().isEmpty()) {
-            sessionData.put("language_id", match.getUser1Offers().get(0).getId());
-        } else {
-            Toast.makeText(getContext(), "Error: No se encontró lenguaje para enseñar", Toast.LENGTH_SHORT).show();
-            return;
+        // Crear vista personalizada para el diálogo
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_request_session, null);
+
+        // Referencias a los elementos del diálogo
+        android.widget.DatePicker datePicker = dialogView.findViewById(R.id.datePicker);
+        android.widget.TimePicker timePicker = dialogView.findViewById(R.id.timePicker);
+        android.widget.Spinner spinnerLanguage = dialogView.findViewById(R.id.spinnerLanguage);
+        android.widget.Spinner spinnerDuration = dialogView.findViewById(R.id.spinnerDuration);
+
+        // Configurar selector de lenguaje
+        List<String> languageNames = new ArrayList<>();
+        for (ProgrammingLanguage lang : match.getUser1Offers()) {
+            languageNames.add(lang.getName());
         }
+        android.widget.ArrayAdapter<String> languageAdapter = new android.widget.ArrayAdapter<>(
+                getContext(), android.R.layout.simple_spinner_item, languageNames);
+        languageAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerLanguage.setAdapter(languageAdapter);
 
-        // Fecha para mañana a las 15:00
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_MONTH, 1);
-        calendar.set(Calendar.HOUR_OF_DAY, 15);
-        calendar.set(Calendar.MINUTE, 0);
-        SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault());
-        isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        sessionData.put("date_time", isoFormat.format(calendar.getTime()));
-        sessionData.put("duration_minutes", 60);
+        // Configurar selector de duración
+        String[] durations = {"30 minutos", "45 minutos", "60 minutos", "90 minutos"};
+        android.widget.ArrayAdapter<String> durationAdapter = new android.widget.ArrayAdapter<>(
+                getContext(), android.R.layout.simple_spinner_item, durations);
+        durationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerDuration.setAdapter(durationAdapter);
+        spinnerDuration.setSelection(2); // 60 minutos por defecto
 
+        // Configurar fecha mínima (mañana)
+        Calendar tomorrow = Calendar.getInstance();
+        tomorrow.add(Calendar.DAY_OF_MONTH, 1);
+        datePicker.setMinDate(tomorrow.getTimeInMillis());
+
+        // Configurar hora (formato 24h)
+        timePicker.setIs24HourView(true);
+        timePicker.setHour(14); // 2 PM por defecto
+        timePicker.setMinute(0);
+
+        builder.setView(dialogView);
+        builder.setPositiveButton("Solicitar", (dialog, which) -> {
+            // Obtener valores seleccionados
+            int year = datePicker.getYear();
+            int month = datePicker.getMonth();
+            int day = datePicker.getDayOfMonth();
+            int hour = timePicker.getHour();
+            int minute = timePicker.getMinute();
+
+            int selectedLanguageIndex = spinnerLanguage.getSelectedItemPosition();
+            int selectedDurationIndex = spinnerDuration.getSelectedItemPosition();
+
+            if (selectedLanguageIndex < 0 || selectedLanguageIndex >= match.getUser1Offers().size()) {
+                Toast.makeText(getContext(), "Error: Selecciona un lenguaje válido", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Crear fecha
+            Calendar sessionDate = Calendar.getInstance();
+            sessionDate.set(year, month, day, hour, minute, 0);
+
+            // Crear datos para la sesión
+            Map<String, Object> sessionData = new HashMap<>();
+            sessionData.put("student_id", match.getUser2().getId());
+            sessionData.put("language_id", match.getUser1Offers().get(selectedLanguageIndex).getId());
+
+            // Formato ISO para Django
+            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault());
+            isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            sessionData.put("date_time", isoFormat.format(sessionDate.getTime()));
+
+            // Duración
+            int[] durationMinutes = {30, 45, 60, 90};
+            sessionData.put("duration_minutes", durationMinutes[selectedDurationIndex]);
+
+            // Crear sesión
+            createSessionRequest(sessionData, match.getUser2().getUsername());
+        });
+
+        builder.setNegativeButton("Cancelar", null);
+        builder.show();
+    }
+
+    private void createSessionRequest(Map<String, Object> sessionData, String studentName) {
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
         Call<Map<String, Object>> call = apiService.createSession(sessionData);
 
@@ -274,13 +337,7 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    Map<String, Object> responseData = response.body();
-                    String message = "¡Sesión solicitada con éxito!";
-                    if (responseData.containsKey("message")) {
-                        message = (String) responseData.get("message");
-                    }
-                    Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
-                    // Recargar matches para actualizar el estado
+                    Toast.makeText(getContext(), "¡Sesión solicitada a " + studentName + "! Aparecerá en sus sesiones pendientes.", Toast.LENGTH_LONG).show();
                     loadMatches();
                 } else {
                     Toast.makeText(getContext(), "Error al crear sesión: " + response.code(), Toast.LENGTH_SHORT).show();

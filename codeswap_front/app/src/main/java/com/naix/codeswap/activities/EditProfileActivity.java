@@ -32,7 +32,7 @@ public class EditProfileActivity extends AppCompatActivity {
 
     private ImageView ivProfilePicture;
     private EditText etFullName, etEmail, etBio;
-    private Button btnChangePhoto, btnAddOfferedSkill, btnAddWantedSkill, btnSaveProfile;
+    private Button btnAddOfferedSkill, btnAddWantedSkill, btnSaveProfile;
     private RecyclerView recyclerSkillsOffered, recyclerSkillsWanted;
 
     private SkillAdapter offeredAdapter, wantedAdapter;
@@ -55,7 +55,6 @@ public class EditProfileActivity extends AppCompatActivity {
         etFullName = findViewById(R.id.etFullName);
         etEmail = findViewById(R.id.etEmail);
         etBio = findViewById(R.id.etBio);
-        btnChangePhoto = findViewById(R.id.btnChangePhoto);
         btnAddOfferedSkill = findViewById(R.id.btnAddOfferedSkill);
         btnAddWantedSkill = findViewById(R.id.btnAddWantedSkill);
         btnSaveProfile = findViewById(R.id.btnSaveProfile);
@@ -93,15 +92,6 @@ public class EditProfileActivity extends AppCompatActivity {
 
         // Cargar datos del perfil
         loadProfileData();
-
-        // Configurar listeners
-        btnChangePhoto.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(EditProfileActivity.this, "Cambiar foto de perfil", Toast.LENGTH_SHORT).show();
-                // Aquí iría el código para seleccionar una foto
-            }
-        });
 
         btnAddOfferedSkill.setOnClickListener(new View.OnClickListener() {
             @Override

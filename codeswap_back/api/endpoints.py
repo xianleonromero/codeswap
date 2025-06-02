@@ -294,7 +294,7 @@ def normal_matches(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def refresh_matches(request):
-    # Limpiar matches potenciales anteriores
+    # Limpiar matches potenciales anteriores del usuario
     Match.objects.filter(user1=request.user, match_type=Match.TYPE_POTENTIAL).delete()
 
     user_offered = OfferedSkill.objects.filter(user=request.user)
@@ -304,19 +304,16 @@ def refresh_matches(request):
 
     # Buscar usuarios que quieren lo que yo ofrezco Y ofrecen lo que yo quiero
     for offered_skill in user_offered:
-        # Usuarios que quieren esta habilidad
         users_wanting_this = WantedSkill.objects.filter(
             language=offered_skill.language
         ).exclude(user=request.user).values_list('user', flat=True)
 
         for user_id in users_wanting_this:
-            # Verificar si este usuario ofrece algo que yo quiero
             for wanted_skill in user_wanted:
                 if OfferedSkill.objects.filter(
                         user_id=user_id,
                         language=wanted_skill.language
                 ).exists():
-                    # Verificar que no existe ya un match normal
                     if not Match.objects.filter(
                             Q(user1=request.user, user2_id=user_id) |
                             Q(user1_id=user_id, user2=request.user),
@@ -330,35 +327,35 @@ def refresh_matches(request):
     for user_id in potential_users:
         other_user = User.objects.get(id=user_id)
 
-        # Calcular compatibilidad basada en coincidencias de habilidades
+        # Calcular compatibilidad
         my_offers = set(user_offered.values_list('language_id', flat=True))
         my_wants = set(user_wanted.values_list('language_id', flat=True))
-
         other_offers = set(OfferedSkill.objects.filter(user=other_user).values_list('language_id', flat=True))
         other_wants = set(WantedSkill.objects.filter(user=other_user).values_list('language_id', flat=True))
 
-        # Coincidencias: lo que yo ofrezco y él quiere + lo que él ofrece y yo quiero
         matches_i_can_teach = len(my_offers.intersection(other_wants))
         matches_he_can_teach = len(other_offers.intersection(my_wants))
-
         total_matches = matches_i_can_teach + matches_he_can_teach
         max_possible = len(my_offers) + len(my_wants)
 
-        # Calcular puntuación de compatibilidad (65-95%)
         if max_possible > 0:
-            base_score = (total_matches / max_possible) * 30 + 65  # 65-95%
-            # Añadir factor aleatorio pequeño
+            base_score = (total_matches / max_possible) * 30 + 65
             compatibility_score = min(95.0, base_score + random.uniform(-5, 5))
         else:
             compatibility_score = random.uniform(65, 85)
 
-        Match.objects.create(
-            user1=request.user,
-            user2=other_user,
-            match_type=Match.TYPE_POTENTIAL,
-            compatibility_score=compatibility_score
-        )
-        matches_created += 1
+        # Crear match solo si no existe ya (ni en una dirección ni en otra)
+        if not Match.objects.filter(
+            Q(user1=request.user, user2=other_user) |
+            Q(user1=other_user, user2=request.user)
+        ).exists():
+            Match.objects.create(
+                user1=request.user,
+                user2=other_user,
+                match_type=Match.TYPE_POTENTIAL,
+                compatibility_score=compatibility_score
+            )
+            matches_created += 1
 
     return Response({
         "message": "Matches refreshed successfully",

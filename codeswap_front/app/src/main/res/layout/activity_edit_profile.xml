@@ -34,16 +34,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tvTitle" />
 
-        <Button
-            android:id="@+id/btnChangePhoto"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Cambiar foto"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/ivProfilePicture" />
-
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilFullName"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -51,7 +41,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:hint="Nombre completo"
-            app:layout_constraintTop_toBottomOf="@+id/btnChangePhoto">
+            app:layout_constraintTop_toBottomOf="@+id/ivProfilePicture" >
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etFullName"
