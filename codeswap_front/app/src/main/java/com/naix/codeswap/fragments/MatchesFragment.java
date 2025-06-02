@@ -211,8 +211,36 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
 
     @Override
     public void onViewDetailsClick(Match match) {
-        Toast.makeText(getContext(), "Ver detalles de " + match.getUser2().getUsername(), Toast.LENGTH_SHORT).show();
-        // Aquí navegarías a la pantalla de detalles del usuario
+        // Crear un diálogo simple para mostrar el perfil del otro usuario
+        User otherUser = match.getUser2();
+
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(getContext());
+        builder.setTitle("Perfil de " + otherUser.getUsername());
+
+        // Crear mensaje con información del usuario
+        StringBuilder profileInfo = new StringBuilder();
+        profileInfo.append("Nombre: ").append(otherUser.getFullName()).append("\n\n");
+
+        // Añadir habilidades que ofrece
+        profileInfo.append("Habilidades que ofrece:\n");
+        for (ProgrammingLanguage skill : match.getUser1Offers()) {
+            profileInfo.append("• ").append(skill.getName()).append("\n");
+        }
+
+        profileInfo.append("\nHabilidades que busca:\n");
+        for (ProgrammingLanguage skill : match.getUser2Wants()) {
+            profileInfo.append("• ").append(skill.getName()).append("\n");
+        }
+
+        profileInfo.append("\nCompatibilidad: ").append(match.getCompatibilityScore()).append("%");
+
+        builder.setMessage(profileInfo.toString());
+        builder.setPositiveButton("Cerrar", null);
+        builder.setNeutralButton("Solicitar Sesión", (dialog, which) -> {
+            onRequestSessionClick(match);
+        });
+
+        builder.show();
     }
 
     @Override
@@ -246,13 +274,19 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    Toast.makeText(getContext(), "¡Sesión solicitada con éxito!", Toast.LENGTH_SHORT).show();
+                    Map<String, Object> responseData = response.body();
+                    String message = "¡Sesión solicitada con éxito!";
+                    if (responseData.containsKey("message")) {
+                        message = (String) responseData.get("message");
+                    }
+                    Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
                     // Recargar matches para actualizar el estado
                     loadMatches();
                 } else {
                     Toast.makeText(getContext(), "Error al crear sesión: " + response.code(), Toast.LENGTH_SHORT).show();
                 }
             }
+
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
                 Toast.makeText(getContext(), "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();

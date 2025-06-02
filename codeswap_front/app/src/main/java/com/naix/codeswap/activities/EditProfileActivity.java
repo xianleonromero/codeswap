@@ -67,11 +67,23 @@ public class EditProfileActivity extends AppCompatActivity {
         recyclerSkillsWanted.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
 
         // Inicializar listas y adaptadores
+// Inicializar listas y adaptadores
         offeredSkills = new ArrayList<>();
         wantedSkills = new ArrayList<>();
 
-        offeredAdapter = new SkillAdapter(this, offeredSkills);
-        wantedAdapter = new SkillAdapter(this, wantedSkills);
+        offeredAdapter = new SkillAdapter(this, offeredSkills, skill -> {
+            // Eliminar habilidad ofrecida
+            offeredSkills.remove(skill);
+            offeredAdapter.notifyDataSetChanged();
+            Toast.makeText(EditProfileActivity.this, "Habilidad eliminada", Toast.LENGTH_SHORT).show();
+        });
+
+        wantedAdapter = new SkillAdapter(this, wantedSkills, skill -> {
+            // Eliminar habilidad buscada
+            wantedSkills.remove(skill);
+            wantedAdapter.notifyDataSetChanged();
+            Toast.makeText(EditProfileActivity.this, "Habilidad eliminada", Toast.LENGTH_SHORT).show();
+        });
 
         recyclerSkillsOffered.setAdapter(offeredAdapter);
         recyclerSkillsWanted.setAdapter(wantedAdapter);

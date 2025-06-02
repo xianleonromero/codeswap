@@ -222,53 +222,64 @@ def potential_matches(request):
     
     return Response(matches_data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def normal_matches(request):
+    # Buscar matches donde el usuario sea user1 O user2
     matches = Match.objects.filter(
-        user1=request.user,
+        Q(user1=request.user) | Q(user2=request.user),
         match_type=Match.TYPE_NORMAL
     )
-    
+
     matches_data = []
     for match in matches:
-        offered_skills = OfferedSkill.objects.filter(user=match.user1)
-        wanted_skills = WantedSkill.objects.filter(user=match.user2)
-        
+        # Determinar quién es "el otro usuario"
+        if match.user1 == request.user:
+            current_user = match.user1
+            other_user = match.user2
+        else:
+            current_user = match.user2
+            other_user = match.user1
+
+        # Obtener habilidades relevantes
+        current_offers = OfferedSkill.objects.filter(user=current_user)
+        other_wants = WantedSkill.objects.filter(user=other_user)
+
         matching_offered = []
-        for offered in offered_skills:
-            if wanted_skills.filter(language=offered.language).exists():
+        for offered in current_offers:
+            if other_wants.filter(language=offered.language).exists():
                 matching_offered.append({
                     "id": offered.language.id,
                     "name": offered.language.name,
                     "icon": offered.language.icon
                 })
-        
-        offered_skills_other = OfferedSkill.objects.filter(user=match.user2)
-        wanted_skills_user = WantedSkill.objects.filter(user=match.user1)
-        
+
+        other_offers = OfferedSkill.objects.filter(user=other_user)
+        current_wants = WantedSkill.objects.filter(user=current_user)
+
         matching_wanted = []
-        for wanted in wanted_skills_user:
-            if offered_skills_other.filter(language=wanted.language).exists():
+        for wanted in current_wants:
+            if other_offers.filter(language=wanted.language).exists():
                 matching_wanted.append({
                     "id": wanted.language.id,
                     "name": wanted.language.name,
                     "icon": wanted.language.icon
                 })
-        
+
         matches_data.append({
             "id": match.id,
             "user1": {
-                "id": match.user1.id,
-                "username": match.user1.username,
-                "first_name": match.user1.first_name,
-                "last_name": match.user1.last_name
+                "id": current_user.id,
+                "username": current_user.username,
+                "first_name": current_user.first_name,
+                "last_name": current_user.last_name
             },
             "user2": {
-                "id": match.user2.id,
-                "username": match.user2.username,
-                "first_name": match.user2.first_name,
-                "last_name": match.user2.last_name
+                "id": other_user.id,
+                "username": other_user.username,
+                "first_name": other_user.first_name,
+                "last_name": other_user.last_name
             },
             "match_type": match.match_type,
             "compatibility_score": match.compatibility_score,
@@ -276,7 +287,7 @@ def normal_matches(request):
             "user1_offers": matching_offered,
             "user2_wants": matching_wanted
         })
-    
+
     return Response(matches_data)
 
 
@@ -430,18 +441,22 @@ def past_sessions(request):
     
     return Response(sessions_data)
 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_session(request):
     if 'student_id' not in request.data or 'language_id' not in request.data or 'date_time' not in request.data:
         return Response({"error": "Missing required fields: student_id, language_id, date_time"}, status=400)
-    
+
     try:
         student = User.objects.get(id=request.data['student_id'])
         language = ProgrammingLanguage.objects.get(id=request.data['language_id'])
     except (User.DoesNotExist, ProgrammingLanguage.DoesNotExist):
         return Response({"error": "Invalid student_id or language_id"}, status=400)
 
+    # Verificar que no sea el mismo usuario
+    if request.user == student:
+        return Response({"error": "Cannot create session with yourself"}, status=400)
 
     session = Session.objects.create(
         teacher=request.user,
@@ -452,13 +467,12 @@ def create_session(request):
         status=Session.STATUS_PENDING
     )
 
-
+    # Actualizar match a normal si existe
     Match.objects.filter(
-        user1=request.user,
-        user2=student,
+        Q(user1=request.user, user2=student) | Q(user1=student, user2=request.user),
         match_type=Match.TYPE_POTENTIAL
     ).update(match_type=Match.TYPE_NORMAL)
-    
+
     return Response({
         "id": session.id,
         "teacher": {
@@ -481,7 +495,8 @@ def create_session(request):
         "status": session.status,
         "date_time": session.date_time,
         "duration_minutes": session.duration_minutes,
-        "google_calendar_event_id": session.google_calendar_event_id
+        "google_calendar_event_id": session.google_calendar_event_id,
+        "message": f"Sesión solicitada a {student.first_name}. Aparecerá en sus sesiones pendientes."
     }, status=201)
 
 @api_view(['PUT'])

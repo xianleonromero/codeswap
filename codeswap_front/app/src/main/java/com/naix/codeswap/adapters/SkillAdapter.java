@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -16,12 +17,26 @@ import java.util.List;
 
 public class SkillAdapter extends RecyclerView.Adapter<SkillAdapter.SkillViewHolder> {
 
+    public interface OnSkillDeleteListener {
+        void onSkillDelete(ProgrammingLanguage skill);
+    }
+
     private List<ProgrammingLanguage> skills;
     private Context context;
+    private OnSkillDeleteListener deleteListener;
 
+    // Constructor sin listener (para mantener compatibilidad)
     public SkillAdapter(Context context, List<ProgrammingLanguage> skills) {
         this.context = context;
         this.skills = skills;
+        this.deleteListener = null;
+    }
+
+    // Constructor con listener para eliminar
+    public SkillAdapter(Context context, List<ProgrammingLanguage> skills, OnSkillDeleteListener deleteListener) {
+        this.context = context;
+        this.skills = skills;
+        this.deleteListener = deleteListener;
     }
 
     @NonNull
@@ -35,6 +50,12 @@ public class SkillAdapter extends RecyclerView.Adapter<SkillAdapter.SkillViewHol
     public void onBindViewHolder(@NonNull SkillViewHolder holder, int position) {
         ProgrammingLanguage skill = skills.get(position);
         holder.tvSkillName.setText(skill.getName());
+        if (deleteListener != null) {
+            holder.ivDeleteSkill.setVisibility(View.VISIBLE);
+            holder.ivDeleteSkill.setOnClickListener(v -> deleteListener.onSkillDelete(skill));
+        } else {
+            holder.ivDeleteSkill.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -49,10 +70,12 @@ public class SkillAdapter extends RecyclerView.Adapter<SkillAdapter.SkillViewHol
 
     static class SkillViewHolder extends RecyclerView.ViewHolder {
         TextView tvSkillName;
+        ImageView ivDeleteSkill;
 
         public SkillViewHolder(@NonNull View itemView) {
             super(itemView);
             tvSkillName = itemView.findViewById(R.id.tvSkillName);
+            ivDeleteSkill = itemView.findViewById(R.id.ivDeleteSkill);
         }
     }
 }
