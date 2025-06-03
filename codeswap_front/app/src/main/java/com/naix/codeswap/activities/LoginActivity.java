@@ -51,20 +51,6 @@ public class LoginActivity extends AppCompatActivity {
                 attemptLogin();
             }
         });
-        TextView tvDemo = findViewById(R.id.tvDemo);
-        tvDemo.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Simular login en modo demo
-                Toast.makeText(LoginActivity.this, "Entrando en modo demo...", Toast.LENGTH_SHORT).show();
-
-
-                Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
-                intent.putExtra("IS_DEMO_MODE", true);
-                startActivity(intent);
-                finish();
-            }
-        });
     }
 
     private void attemptLogin() {

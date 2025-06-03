@@ -25,7 +25,6 @@ public class MatchAdapter extends RecyclerView.Adapter<MatchAdapter.MatchViewHol
     private final OnMatchClickListener listener;
 
     public interface OnMatchClickListener {
-        void onViewDetailsClick(Match match);
         void onRequestSessionClick(Match match);
     }
 
@@ -52,9 +51,6 @@ public class MatchAdapter extends RecyclerView.Adapter<MatchAdapter.MatchViewHol
         // Mostrar el tipo de match
         String matchType = match.isPotentialMatch() ? "Match Potencial ⭐⭐" : "Match Normal ⭐";
         holder.tvMatchType.setText(matchType);
-
-        // Mostrar la compatibilidad
-        holder.tvCompatibility.setText("Compatibilidad: " + match.getCompatibilityScore() + "%");
 
         // Mostrar lo que EL OTRO USUARIO busca y ofrece
         String otherWants = match.getUser2Wants().stream()
@@ -86,7 +82,6 @@ public class MatchAdapter extends RecyclerView.Adapter<MatchAdapter.MatchViewHol
         holder.tvLanguages.setText(skillsText.toString());
 
         // Configurar listeners de botones
-        holder.btnViewDetails.setOnClickListener(v -> listener.onViewDetailsClick(match));
         holder.btnRequestSession.setOnClickListener(v -> listener.onRequestSessionClick(match));
     }
 
@@ -101,16 +96,14 @@ public class MatchAdapter extends RecyclerView.Adapter<MatchAdapter.MatchViewHol
     }
 
     static class MatchViewHolder extends RecyclerView.ViewHolder {
-        TextView tvUsername, tvMatchType, tvCompatibility, tvLanguages;
-        Button btnViewDetails, btnRequestSession;
+        TextView tvUsername, tvMatchType, tvLanguages;
+        Button btnRequestSession;
 
         public MatchViewHolder(@NonNull View itemView) {
             super(itemView);
             tvUsername = itemView.findViewById(R.id.tvUsername);
             tvMatchType = itemView.findViewById(R.id.tvMatchType);
-            tvCompatibility = itemView.findViewById(R.id.tvCompatibility);
             tvLanguages = itemView.findViewById(R.id.tvLanguages);
-            btnViewDetails = itemView.findViewById(R.id.btnViewDetails);
             btnRequestSession = itemView.findViewById(R.id.btnRequestSession);
         }
     }

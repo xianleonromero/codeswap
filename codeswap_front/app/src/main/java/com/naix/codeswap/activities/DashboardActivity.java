@@ -36,10 +36,6 @@ public class DashboardActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        boolean isDemoMode = getIntent().getBooleanExtra("IS_DEMO_MODE", false);
-        if (isDemoMode) {
-            Toast.makeText(this, "Modo demo activado. Algunas funciones están limitadas.", Toast.LENGTH_LONG).show();
-        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -59,7 +55,7 @@ public class DashboardActivity extends AppCompatActivity {
         String username = prefs.getString("username", "");
 
         if (!username.isEmpty() && getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("CodeSwap - " + username);
+            getSupportActionBar().setTitle("CodeSwap");
         }
     }
 

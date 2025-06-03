@@ -210,40 +210,6 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
 
 
     @Override
-    public void onViewDetailsClick(Match match) {
-        // Crear un diálogo simple para mostrar el perfil del otro usuario
-        User otherUser = match.getUser2();
-
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(getContext());
-        builder.setTitle("Perfil de " + otherUser.getUsername());
-
-        // Crear mensaje con información del usuario
-        StringBuilder profileInfo = new StringBuilder();
-        profileInfo.append("Nombre: ").append(otherUser.getFullName()).append("\n\n");
-
-        // Añadir habilidades que ofrece
-        profileInfo.append("Habilidades que ofrece:\n");
-        for (ProgrammingLanguage skill : match.getUser1Offers()) {
-            profileInfo.append("• ").append(skill.getName()).append("\n");
-        }
-
-        profileInfo.append("\nHabilidades que busca:\n");
-        for (ProgrammingLanguage skill : match.getUser2Wants()) {
-            profileInfo.append("• ").append(skill.getName()).append("\n");
-        }
-
-        profileInfo.append("\nCompatibilidad: ").append(match.getCompatibilityScore()).append("%");
-
-        builder.setMessage(profileInfo.toString());
-        builder.setPositiveButton("Cerrar", null);
-        builder.setNeutralButton("Solicitar Sesión", (dialog, which) -> {
-            onRequestSessionClick(match);
-        });
-
-        builder.show();
-    }
-
-    @Override
     public void onRequestSessionClick(Match match) {
         // Crear diálogo para seleccionar fecha y hora
         androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(getContext());

@@ -75,6 +75,7 @@ public class HomeFragment extends Fragment {
                 }
             });
         });
+
     }
     private void loadRealData() {
         // Mostrar 0 inicialmente

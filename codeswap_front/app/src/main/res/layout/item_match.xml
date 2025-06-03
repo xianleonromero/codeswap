@@ -36,40 +36,17 @@
         </LinearLayout>
 
         <TextView
-            android:id="@+id/tvCompatibility"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Compatibilidad: 95%" />
-
-        <TextView
             android:id="@+id/tvLanguages"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="Ofreces: Java, Python\nBusca: Kotlin, JavaScript" />
 
-        <LinearLayout
+        <Button
+            android:id="@+id/btnRequestSession"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btnViewDetails"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="4dp"
-                android:layout_weight="1"
-                android:text="Ver Perfil" />
-
-            <Button
-                android:id="@+id/btnRequestSession"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_weight="1"
-                android:text="Solicitar Sesión" />
-        </LinearLayout>
+            android:text="Solicitar Sesión" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>
