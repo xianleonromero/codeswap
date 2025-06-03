@@ -32,6 +32,12 @@ public class ApiClient {
                 public Response intercept(Chain chain) throws IOException {
                     Request original = chain.request();
 
+                    // No añadir token a endpoints de autenticación
+                    String url = original.url().toString();
+                    if (url.contains("/auth/login/") || url.contains("/auth/registration/") || url.contains("/languages/")) {
+                        return chain.proceed(original);
+                    }
+
                     // Obtener token si existe
                     String token = null;
                     if (context != null) {
