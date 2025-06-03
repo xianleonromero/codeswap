@@ -264,15 +264,14 @@ def normal_matches(request):
                     "icon": offered.language.icon
                 })
 
-        # user2_wants: Lo que EL OTRO (other_user) busca y que YO puedo enseñar
+        # user2_wants: Lo que EL OTRO (other_user) busca (todas sus habilidades buscadas)
         user2_wants = []
         for want in other_wants:
-            if current_offers.filter(language=want.language).exists():
-                user2_wants.append({
-                    "id": want.language.id,
-                    "name": want.language.name,
-                    "icon": want.language.icon
-                })
+            user2_wants.append({
+                "id": want.language.id,
+                "name": want.language.name,
+                "icon": want.language.icon
+            })
 
         matches_data.append({
             "id": match.id,

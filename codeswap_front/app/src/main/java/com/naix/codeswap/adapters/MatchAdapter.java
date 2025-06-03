@@ -42,7 +42,6 @@ public class MatchAdapter extends RecyclerView.Adapter<MatchAdapter.MatchViewHol
         return new MatchViewHolder(view);
     }
 
-    @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull MatchViewHolder holder, int position) {
         Match match = matches.get(position);
@@ -66,16 +65,15 @@ public class MatchAdapter extends RecyclerView.Adapter<MatchAdapter.MatchViewHol
                 .map(ProgrammingLanguage::getName)
                 .collect(Collectors.joining(", "));
 
-        // Corregir el texto para que sea más claro
+        // Texto corregido según los requisitos
         if (!offers.isEmpty() && !wants.isEmpty()) {
-            holder.tvLanguages.setText("Puedes enseñar: " + offers + "\n" +
-                    match.getUser2().getUsername() + " busca: " + wants);
+            holder.tvLanguages.setText("Puede enseñar: " + offers + "\nBusca: " + wants);
         } else if (!offers.isEmpty()) {
-            holder.tvLanguages.setText("Puedes enseñar: " + offers);
+            holder.tvLanguages.setText("Puede enseñar: " + offers);
         } else if (!wants.isEmpty()) {
-            holder.tvLanguages.setText(match.getUser2().getUsername() + " busca: " + wants);
+            holder.tvLanguages.setText("Busca: " + wants);
         } else {
-            holder.tvLanguages.setText("Sin coincidencias específicas");
+            holder.tvLanguages.setText("Sin información de habilidades");
         }
 
         // Configurar listeners de botones
