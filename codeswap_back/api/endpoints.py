@@ -597,7 +597,7 @@ def admin_clear_users(request):
 @permission_classes([IsAuthenticated])
 def request_session(request):
     if 'receiver_id' not in request.data or 'language_id' not in request.data or 'date_time' not in request.data:
-        return Response({"error": "Missing required fields: receiver_id, language_id, date_time"}, status=400)
+        return Response({"error": "Missing required fields"}, status=400)
 
     try:
         receiver = User.objects.get(id=request.data['receiver_id'])
@@ -607,16 +607,6 @@ def request_session(request):
 
     if request.user == receiver:
         return Response({"error": "Cannot request session with yourself"}, status=400)
-
-    # Verificar si ya existe una solicitud pendiente
-    existing_request = SessionRequest.objects.filter(
-        requester=request.user,
-        receiver=receiver,
-        status=SessionRequest.STATUS_PENDING
-    ).exists()
-
-    if existing_request:
-        return Response({"error": "Ya tienes una solicitud pendiente con este usuario"}, status=400)
 
     session_request = SessionRequest.objects.create(
         requester=request.user,
@@ -630,12 +620,11 @@ def request_session(request):
 
     return Response({
         "id": session_request.id,
-        "message": f"Solicitud enviada a {receiver.username}. Recibirá una notificación.",
+        "message": f"Solicitud enviada a {receiver.username}",
         "status": "sent"
     }, status=201)
 
 
-# Endpoint para obtener notificaciones pendientes
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def pending_session_requests(request):
@@ -669,7 +658,6 @@ def pending_session_requests(request):
     return Response(requests_data)
 
 
-# Endpoint para responder a solicitud
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def respond_session_request(request, request_id):
@@ -678,13 +666,9 @@ def respond_session_request(request, request_id):
     except SessionRequest.DoesNotExist:
         return Response({"error": "Request not found"}, status=404)
 
-    if session_request.status != SessionRequest.STATUS_PENDING:
-        return Response({"error": "Esta solicitud ya fue respondida"}, status=400)
-
-    action = request.data.get('action')  # 'accept' o 'reject'
+    action = request.data.get('action')
 
     if action == 'accept':
-        # Crear la sesión real
         session = Session.objects.create(
             teacher=session_request.requester,
             student=session_request.receiver,
@@ -694,36 +678,24 @@ def respond_session_request(request, request_id):
             status=Session.STATUS_CONFIRMED
         )
 
-        # Actualizar match a normal si existe
-        Match.objects.filter(
-            Q(user1=session_request.requester, user2=session_request.receiver) |
-            Q(user1=session_request.receiver, user2=session_request.requester),
-            match_type=Match.TYPE_POTENTIAL
-        ).update(match_type=Match.TYPE_NORMAL)
-
         session_request.status = SessionRequest.STATUS_ACCEPTED
         session_request.save()
 
         return Response({
             "message": "Sesión aceptada y programada",
-            "session_id": session.id,
-            "status": "accepted"
+            "session_id": session.id
         })
 
     elif action == 'reject':
         session_request.status = SessionRequest.STATUS_REJECTED
         session_request.save()
 
-        return Response({
-            "message": "Solicitud rechazada",
-            "status": "rejected"
-        })
+        return Response({"message": "Solicitud rechazada"})
 
     else:
-        return Response({"error": "Invalid action. Use 'accept' or 'reject'"}, status=400)
+        return Response({"error": "Invalid action"}, status=400)
 
 
-# Endpoint para obtener el conteo de notificaciones pendientes
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def notifications_count(request):

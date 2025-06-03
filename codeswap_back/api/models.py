@@ -218,8 +218,6 @@ def create_initial_data(sender, **kwargs):
         print("🎉 Initial data creation complete!")
 
 
-# Añadir al final de models.py (después del modelo Session)
-
 class SessionRequest(models.Model):
     STATUS_PENDING = 'PENDING'
     STATUS_ACCEPTED = 'ACCEPTED'
@@ -245,9 +243,3 @@ class SessionRequest(models.Model):
 
     def is_pending(self):
         return self.status == self.STATUS_PENDING
-
-    def is_accepted(self):
-        return self.status == self.STATUS_ACCEPTED
-
-    def is_rejected(self):
-        return self.status == self.STATUS_REJECTED
