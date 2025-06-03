@@ -44,4 +44,7 @@ urlpatterns = [
     path('api/sessions/past/', endpoints.past_sessions, name='past-sessions'),
     path('api/sessions/', endpoints.create_session, name='create-session'),
     path('api/sessions/<int:session_id>/', endpoints.update_session_status, name='update-session'),
+
+
+    path('api/admin/clear-users/', endpoints.admin_clear_users, name='admin-clear-users'),
 ]

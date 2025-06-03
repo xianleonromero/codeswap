@@ -569,3 +569,37 @@ def update_session_status(request, session_id):
         "duration_minutes": session.duration_minutes,
         "google_calendar_event_id": session.google_calendar_event_id
     })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])  # TEMPORAL - quitar después
+def admin_clear_users(request):
+    # SOLO para desarrollo - ELIMINAR EN PRODUCCIÓN
+    secret = request.data.get('secret')
+    if secret != 'clear_users_secret_2024':
+        return Response({"error": "Unauthorized"}, status=403)
+
+    from django.contrib.auth.models import User
+    from api.models import Match, Session, OfferedSkill, WantedSkill, UserProfile
+
+    users_before = User.objects.count()
+
+    # Eliminar datos relacionados
+    Session.objects.all().delete()
+    Match.objects.all().delete()
+    OfferedSkill.objects.all().delete()
+    WantedSkill.objects.all().delete()
+    UserProfile.objects.exclude(user__username='admin').delete()
+
+    # Eliminar usuarios excepto admin
+    deleted_count = User.objects.exclude(username='admin').count()
+    User.objects.exclude(username='admin').delete()
+
+    users_after = User.objects.count()
+
+    return Response({
+        "message": "Users cleared successfully",
+        "users_before": users_before,
+        "users_deleted": deleted_count,
+        "users_remaining": users_after
+    })
