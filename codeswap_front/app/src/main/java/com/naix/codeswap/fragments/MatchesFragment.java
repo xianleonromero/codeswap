@@ -326,7 +326,7 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
 
             // Crear datos para la sesión
             Map<String, Object> sessionData = new HashMap<>();
-            sessionData.put("student_id", match.getUser2().getId());
+            sessionData.put("receiver_id", match.getUser2().getId());
             sessionData.put("language_id", availableLanguages.get(selectedLanguageIndex).getId());
 
             // Formato ISO para Django
@@ -347,16 +347,11 @@ public class MatchesFragment extends Fragment implements MatchAdapter.OnMatchCli
     }
 
     private void createSessionRequest(Map<String, Object> sessionData, String receiverName) {
-        // Cambiar los nombres de campos para el nuevo endpoint
-        Map<String, Object> requestData = new HashMap<>();
-        requestData.put("receiver_id", sessionData.get("student_id"));
-        requestData.put("language_id", sessionData.get("language_id"));
-        requestData.put("date_time", sessionData.get("date_time"));
-        requestData.put("duration_minutes", sessionData.get("duration_minutes"));
-        requestData.put("message", "Solicitud de sesión de programación");
+        // Añadir mensaje directamente a sessionData
+        sessionData.put("message", "Solicitud de sesión de programación");
 
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        Call<Map<String, Object>> call = apiService.requestSession(requestData);
+        Call<Map<String, Object>> call = apiService.requestSession(sessionData);
 
         call.enqueue(new Callback<Map<String, Object>>() {
             @Override
