@@ -612,7 +612,7 @@ def request_session(request):
         requester=request.user,
         receiver=receiver,
         language=language,
-        proposed_date_time=timezone.datetime.fromisoformat(request.data['date_time'].replace('Z', '+00:00')),
+        proposed_date_time=datetime.fromisoformat(request.data['date_time'].replace('Z', '+00:00')),
         duration_minutes=request.data.get('duration_minutes', 60),
         message=request.data.get('message', ''),
         status=SessionRequest.STATUS_PENDING
@@ -673,7 +673,7 @@ def respond_session_request(request, request_id):
             teacher=session_request.requester,
             student=session_request.receiver,
             language=session_request.language,
-            date_time=session_request.proposed_date_time,
+            date_time=datetime.fromisoformat(request.data['date_time'].replace('Z', '+00:00')),
             duration_minutes=session_request.duration_minutes,
             status=Session.STATUS_CONFIRMED
         )
