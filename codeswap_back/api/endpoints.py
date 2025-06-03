@@ -164,78 +164,9 @@ def profile(request):
         
         return Response({"message": "Profile updated successfully"})
 
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def potential_matches(request):
-    # Buscar matches potenciales donde el usuario sea user1 O user2
-    matches = Match.objects.filter(
-        Q(user1=request.user) | Q(user2=request.user),
-        match_type=Match.TYPE_POTENTIAL
-    )
-
-    matches_data = []
-    for match in matches:
-        # Siempre estructurar la respuesta con el usuario actual como user1
-        if match.user1 == request.user:
-            current_user = match.user1
-            other_user = match.user2
-        else:
-            current_user = match.user2
-            other_user = match.user1
-
-        # user1_offers: Lo que YO (current_user) ofrezco y que EL OTRO quiere
-        current_offers = OfferedSkill.objects.filter(user=current_user)
-        other_wants = WantedSkill.objects.filter(user=other_user)
-
-        user1_offers = []
-        for offered in current_offers:
-            if other_wants.filter(language=offered.language).exists():
-                user1_offers.append({
-                    "id": offered.language.id,
-                    "name": offered.language.name,
-                    "icon": offered.language.icon
-                })
-
-        # user2_wants: Lo que EL OTRO (other_user) busca y que YO puedo enseñar
-        # (Es lo mismo que user1_offers, pero lo ponemos desde la perspectiva del otro)
-        user2_wants = []
-        for want in other_wants:
-            if current_offers.filter(language=want.language).exists():
-                user2_wants.append({
-                    "id": want.language.id,
-                    "name": want.language.name,
-                    "icon": want.language.icon
-                })
-
-        matches_data.append({
-            "id": match.id,
-            "user1": {  # Siempre el usuario actual
-                "id": current_user.id,
-                "username": current_user.username,
-                "first_name": current_user.first_name,
-                "last_name": current_user.last_name
-            },
-            "user2": {  # Siempre el otro usuario
-                "id": other_user.id,
-                "username": other_user.username,
-                "first_name": other_user.first_name,
-                "last_name": other_user.last_name
-            },
-            "match_type": match.match_type,
-            "compatibility_score": match.compatibility_score,
-            "created_at": match.created_at,
-            "user1_offers": user1_offers,  # Lo que YO ofrezco (que él quiere)
-            "user2_wants": user2_wants  # Lo que ÉL busca (que yo puedo enseñar)
-        })
-
-    return Response(matches_data)
-
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def normal_matches(request):
-    # Buscar matches normales donde el usuario sea user1 O user2
     matches = Match.objects.filter(
         Q(user1=request.user) | Q(user2=request.user),
         match_type=Match.TYPE_NORMAL
@@ -243,7 +174,7 @@ def normal_matches(request):
 
     matches_data = []
     for match in matches:
-        # Siempre estructurar la respuesta con el usuario actual como user1
+        # Determinar quién es el otro usuario
         if match.user1 == request.user:
             current_user = match.user1
             other_user = match.user2
@@ -251,37 +182,33 @@ def normal_matches(request):
             current_user = match.user2
             other_user = match.user1
 
-        # user1_offers: Lo que YO (current_user) ofrezco y que EL OTRO quiere
-        current_offers = OfferedSkill.objects.filter(user=current_user)
-        other_wants = WantedSkill.objects.filter(user=other_user)
+        # TODAS las habilidades que el OTRO USUARIO BUSCA
+        other_wants = []
+        for skill in WantedSkill.objects.filter(user=other_user):
+            other_wants.append({
+                "id": skill.language.id,
+                "name": skill.language.name,
+                "icon": skill.language.icon
+            })
 
-        user1_offers = []
-        for offered in current_offers:
-            if other_wants.filter(language=offered.language).exists():
-                user1_offers.append({
-                    "id": offered.language.id,
-                    "name": offered.language.name,
-                    "icon": offered.language.icon
-                })
-
-        # user2_wants: Lo que EL OTRO (other_user) busca (todas sus habilidades buscadas)
-        user2_wants = []
-        for want in other_wants:
-            user2_wants.append({
-                "id": want.language.id,
-                "name": want.language.name,
-                "icon": want.language.icon
+        # TODAS las habilidades que el OTRO USUARIO OFRECE
+        other_offers = []
+        for skill in OfferedSkill.objects.filter(user=other_user):
+            other_offers.append({
+                "id": skill.language.id,
+                "name": skill.language.name,
+                "icon": skill.language.icon
             })
 
         matches_data.append({
             "id": match.id,
-            "user1": {  # Siempre el usuario actual
+            "user1": {
                 "id": current_user.id,
                 "username": current_user.username,
                 "first_name": current_user.first_name,
                 "last_name": current_user.last_name
             },
-            "user2": {  # Siempre el otro usuario
+            "user2": {
                 "id": other_user.id,
                 "username": other_user.username,
                 "first_name": other_user.first_name,
@@ -290,8 +217,68 @@ def normal_matches(request):
             "match_type": match.match_type,
             "compatibility_score": match.compatibility_score,
             "created_at": match.created_at,
-            "user1_offers": user1_offers,  # Lo que YO ofrezco (que él quiere)
-            "user2_wants": user2_wants  # Lo que ÉL busca (que yo puedo enseñar)
+            "user2_wants": other_wants,    # Lo que EL OTRO busca
+            "user2_offers": other_offers   # Lo que EL OTRO ofrece
+        })
+
+    return Response(matches_data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def potential_matches(request):
+    matches = Match.objects.filter(
+        Q(user1=request.user) | Q(user2=request.user),
+        match_type=Match.TYPE_POTENTIAL
+    )
+
+    matches_data = []
+    for match in matches:
+        # Determinar quién es el otro usuario
+        if match.user1 == request.user:
+            current_user = match.user1
+            other_user = match.user2
+        else:
+            current_user = match.user2
+            other_user = match.user1
+
+        # TODAS las habilidades que el OTRO USUARIO BUSCA
+        other_wants = []
+        for skill in WantedSkill.objects.filter(user=other_user):
+            other_wants.append({
+                "id": skill.language.id,
+                "name": skill.language.name,
+                "icon": skill.language.icon
+            })
+
+        # TODAS las habilidades que el OTRO USUARIO OFRECE
+        other_offers = []
+        for skill in OfferedSkill.objects.filter(user=other_user):
+            other_offers.append({
+                "id": skill.language.id,
+                "name": skill.language.name,
+                "icon": skill.language.icon
+            })
+
+        matches_data.append({
+            "id": match.id,
+            "user1": {
+                "id": current_user.id,
+                "username": current_user.username,
+                "first_name": current_user.first_name,
+                "last_name": current_user.last_name
+            },
+            "user2": {
+                "id": other_user.id,
+                "username": other_user.username,
+                "first_name": other_user.first_name,
+                "last_name": other_user.last_name
+            },
+            "match_type": match.match_type,
+            "compatibility_score": match.compatibility_score,
+            "created_at": match.created_at,
+            "user2_wants": other_wants,    # Lo que EL OTRO busca
+            "user2_offers": other_offers   # Lo que EL OTRO ofrece
         })
 
     return Response(matches_data)

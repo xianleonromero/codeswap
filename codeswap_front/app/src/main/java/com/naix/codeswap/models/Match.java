@@ -1,5 +1,6 @@
 package com.naix.codeswap.models;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Date;
 import java.util.List;
@@ -18,6 +19,7 @@ public class Match {
     private float compatibilityScore;
     private List<ProgrammingLanguage> user1Offers;
     private List<ProgrammingLanguage> user2Wants;
+    private List<ProgrammingLanguage> user2Offers;
 
 
     public int getId() {
@@ -159,7 +161,29 @@ public class Match {
             }
             match.setUser2Wants(wants);
         }
+        if (data.containsKey("user2_offers")) {
+            List<Map<String, Object>> offersData = (List<Map<String, Object>>) data.get("user2_offers");
+            List<ProgrammingLanguage> user2Offers = new ArrayList<>();
 
+            for (Map<String, Object> offerData : offersData) {
+                ProgrammingLanguage lang = new ProgrammingLanguage();
+                lang.setId(((Double) offerData.get("id")).intValue());
+                lang.setName((String) offerData.get("name"));
+                if (offerData.containsKey("icon")) {
+                    lang.setIcon((String) offerData.get("icon"));
+                }
+                user2Offers.add(lang);
+            }
+            match.setUser2Offers(user2Offers);
+        }
         return match;
+    }
+
+    public List<ProgrammingLanguage> getUser2Offers() {
+        return user2Offers != null ? user2Offers : new ArrayList<>();
+    }
+
+    public void setUser2Offers(List<ProgrammingLanguage> user2Offers) {
+        this.user2Offers = user2Offers;
     }
 }

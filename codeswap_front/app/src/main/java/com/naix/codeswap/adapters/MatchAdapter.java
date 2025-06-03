@@ -56,27 +56,27 @@ public class MatchAdapter extends RecyclerView.Adapter<MatchAdapter.MatchViewHol
         // Mostrar la compatibilidad
         holder.tvCompatibility.setText("Compatibilidad: " + match.getCompatibilityScore() + "%");
 
-        // Lógica corregida: mostrar correctamente las habilidades
-        String canTeach = match.getUser1Offers().stream()
-                .map(ProgrammingLanguage::getName)
-                .collect(Collectors.joining(", "));
-
+        // Mostrar lo que EL OTRO USUARIO busca y ofrece
         String otherWants = match.getUser2Wants().stream()
                 .map(ProgrammingLanguage::getName)
                 .collect(Collectors.joining(", "));
 
-        // Mostrar información clara y correcta
+        String otherOffers = match.getUser2Offers().stream()
+                .map(ProgrammingLanguage::getName)
+                .collect(Collectors.joining(", "));
+
+        // Construir el texto mostrando info del otro usuario
         StringBuilder skillsText = new StringBuilder();
 
-        if (!canTeach.isEmpty()) {
-            skillsText.append("Puede enseñar: ").append(canTeach);
+        if (!otherWants.isEmpty()) {
+            skillsText.append("Busca: ").append(otherWants);
         }
 
-        if (!otherWants.isEmpty()) {
+        if (!otherOffers.isEmpty()) {
             if (skillsText.length() > 0) {
                 skillsText.append("\n");
             }
-            skillsText.append(match.getUser2().getUsername()).append(" busca: ").append(otherWants);
+            skillsText.append("Ofrece: ").append(otherOffers);
         }
 
         if (skillsText.length() == 0) {
