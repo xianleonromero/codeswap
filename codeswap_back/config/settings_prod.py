@@ -32,3 +32,14 @@ MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 # Secret key desde variable de entorno
 SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback-secret-key-for-development')
+
+if os.environ.get('RUN_MIGRATIONS') == 'true':
+    import django
+    django.setup()
+    from django.core.management import execute_from_command_line
+    try:
+        execute_from_command_line(['manage.py', 'makemigrations'])
+        execute_from_command_line(['manage.py', 'migrate'])
+        print("✅ Migrations executed successfully!")
+    except Exception as e:
+        print(f"❌ Migration error: {e}")
