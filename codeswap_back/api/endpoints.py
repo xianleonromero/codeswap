@@ -596,34 +596,72 @@ def admin_clear_users(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def request_session(request):
+    # DEBUG: Log inicial
+    print(f"🔵 DEBUG - request_session iniciado")
+    print(f"🔵 DEBUG - request.data: {request.data}")
+
     if 'receiver_id' not in request.data or 'language_id' not in request.data or 'date_time' not in request.data:
+        print(f"🔴 DEBUG - Missing fields error")
         return Response({"error": "Missing required fields"}, status=400)
 
     try:
         receiver = User.objects.get(id=request.data['receiver_id'])
         language = ProgrammingLanguage.objects.get(id=request.data['language_id'])
-    except (User.DoesNotExist, ProgrammingLanguage.DoesNotExist):
+        print(f"🟢 DEBUG - User and language found: {receiver.username}, {language.name}")
+    except (User.DoesNotExist, ProgrammingLanguage.DoesNotExist) as e:
+        print(f"🔴 DEBUG - User/Language error: {e}")
         return Response({"error": "Invalid receiver_id or language_id"}, status=400)
 
     if request.user == receiver:
+        print(f"🔴 DEBUG - Same user error")
         return Response({"error": "Cannot request session with yourself"}, status=400)
 
-    session_request = SessionRequest.objects.create(
-        requester=request.user,
-        receiver=receiver,
-        language=language,
-        proposed_date_time=timezone.make_aware(datetime.fromisoformat(request.data['date_time'].replace('Z', ''))),
-        duration_minutes=request.data.get('duration_minutes', 60),
-        message=request.data.get('message', ''),
-        status=SessionRequest.STATUS_PENDING
-    )
+    # DEBUG: Procesar fecha
+    try:
+        date_str = request.data['date_time']
+        print(f"🟡 DEBUG - Original date string: {date_str}")
+
+        # Limpiar la fecha
+        clean_date = date_str.replace('Z', '')
+        print(f"🟡 DEBUG - Clean date string: {clean_date}")
+
+        # Crear datetime
+        dt_naive = datetime.fromisoformat(clean_date)
+        print(f"🟡 DEBUG - Naive datetime: {dt_naive}")
+
+        # Hacer aware
+        dt_aware = timezone.make_aware(dt_naive)
+        print(f"🟡 DEBUG - Aware datetime: {dt_aware}")
+
+    except Exception as e:
+        print(f"🔴 DEBUG - Date parsing error: {e}")
+        return Response({"error": f"Date parsing error: {e}"}, status=400)
+
+    # DEBUG: Crear SessionRequest
+    try:
+        print(f"🟡 DEBUG - Creating SessionRequest...")
+        session_request = SessionRequest.objects.create(
+            requester=request.user,
+            receiver=receiver,
+            language=language,
+            proposed_date_time=dt_aware,
+            duration_minutes=request.data.get('duration_minutes', 60),
+            message=request.data.get('message', ''),
+            status=SessionRequest.STATUS_PENDING
+        )
+        print(f"🟢 DEBUG - SessionRequest created successfully: {session_request.id}")
+
+    except Exception as e:
+        print(f"🔴 DEBUG - SessionRequest creation error: {e}")
+        import traceback
+        print(f"🔴 DEBUG - Full traceback: {traceback.format_exc()}")
+        return Response({"error": f"Creation error: {e}"}, status=500)
 
     return Response({
         "id": session_request.id,
         "message": f"Solicitud enviada a {receiver.username}",
         "status": "sent"
     }, status=201)
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
