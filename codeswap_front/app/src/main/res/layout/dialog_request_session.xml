@@ -20,7 +20,8 @@
             android:id="@+id/spinnerLanguage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"
+            android:minHeight="48dp" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -33,7 +34,8 @@
             android:id="@+id/spinnerDuration"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"
+            android:minHeight="48dp" />
 
         <TextView
             android:layout_width="wrap_content"
