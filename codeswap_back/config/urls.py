@@ -45,6 +45,11 @@ urlpatterns = [
     path('api/sessions/', endpoints.create_session, name='create-session'),
     path('api/sessions/<int:session_id>/', endpoints.update_session_status, name='update-session'),
 
+    path('api/session-requests/', endpoints.request_session, name='request-session'),
+    path('api/session-requests/pending/', endpoints.pending_session_requests, name='pending-requests'),
+    path('api/session-requests/<int:request_id>/respond/', endpoints.respond_session_request, name='respond-request'),
+    path('api/notifications/count/', endpoints.notifications_count, name='notifications-count'),
+
 
     path('api/admin/clear-users/', endpoints.admin_clear_users, name='admin-clear-users'),
 ]

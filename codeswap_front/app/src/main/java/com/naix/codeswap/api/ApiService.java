@@ -64,4 +64,16 @@ public interface ApiService {
 
     @PUT("profile/")
     Call<Map<String, Object>> updateProfile(@Body Map<String, Object> profileData);
+
+    @POST("session-requests/")
+    Call<Map<String, Object>> requestSession(@Body Map<String, Object> requestData);
+
+    @GET("session-requests/pending/")
+    Call<List<Map<String, Object>>> getPendingRequests();
+
+    @POST("session-requests/{id}/respond/")
+    Call<Map<String, Object>> respondToRequest(@Path("id") int requestId, @Body Map<String, String> response);
+
+    @GET("notifications/count/")
+    Call<Map<String, Object>> getNotificationsCount();
 }

@@ -216,3 +216,38 @@ def create_initial_data(sender, **kwargs):
                         pass
 
         print("🎉 Initial data creation complete!")
+
+
+# Añadir al final de models.py (después del modelo Session)
+
+class SessionRequest(models.Model):
+    STATUS_PENDING = 'PENDING'
+    STATUS_ACCEPTED = 'ACCEPTED'
+    STATUS_REJECTED = 'REJECTED'
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_ACCEPTED, 'Accepted'),
+        (STATUS_REJECTED, 'Rejected'),
+    ]
+
+    requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='session_requests_sent')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='session_requests_received')
+    language = models.ForeignKey(ProgrammingLanguage, on_delete=models.CASCADE)
+    message = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    proposed_date_time = models.DateTimeField()
+    duration_minutes = models.IntegerField(default=60)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.requester.username} → {self.receiver.username} ({self.language.name})"
+
+    def is_pending(self):
+        return self.status == self.STATUS_PENDING
+
+    def is_accepted(self):
+        return self.status == self.STATUS_ACCEPTED
+
+    def is_rejected(self):
+        return self.status == self.STATUS_REJECTED

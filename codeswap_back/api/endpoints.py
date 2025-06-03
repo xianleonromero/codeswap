@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.utils import timezone
-from .models import ProgrammingLanguage, UserProfile, OfferedSkill, WantedSkill, Match, Session
+from .models import ProgrammingLanguage, UserProfile, OfferedSkill, WantedSkill, Match, Session, SessionRequest
 import random
 from datetime import timedelta
 from django.contrib.auth import authenticate
@@ -590,3 +590,146 @@ def admin_clear_users(request):
         "users_deleted": deleted_count,
         "users_remaining": users_after
     })
+
+
+# Endpoint para solicitar sesión (crear notificación)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def request_session(request):
+    if 'receiver_id' not in request.data or 'language_id' not in request.data or 'date_time' not in request.data:
+        return Response({"error": "Missing required fields: receiver_id, language_id, date_time"}, status=400)
+
+    try:
+        receiver = User.objects.get(id=request.data['receiver_id'])
+        language = ProgrammingLanguage.objects.get(id=request.data['language_id'])
+    except (User.DoesNotExist, ProgrammingLanguage.DoesNotExist):
+        return Response({"error": "Invalid receiver_id or language_id"}, status=400)
+
+    if request.user == receiver:
+        return Response({"error": "Cannot request session with yourself"}, status=400)
+
+    # Verificar si ya existe una solicitud pendiente
+    existing_request = SessionRequest.objects.filter(
+        requester=request.user,
+        receiver=receiver,
+        status=SessionRequest.STATUS_PENDING
+    ).exists()
+
+    if existing_request:
+        return Response({"error": "Ya tienes una solicitud pendiente con este usuario"}, status=400)
+
+    session_request = SessionRequest.objects.create(
+        requester=request.user,
+        receiver=receiver,
+        language=language,
+        proposed_date_time=timezone.datetime.fromisoformat(request.data['date_time'].replace('Z', '+00:00')),
+        duration_minutes=request.data.get('duration_minutes', 60),
+        message=request.data.get('message', ''),
+        status=SessionRequest.STATUS_PENDING
+    )
+
+    return Response({
+        "id": session_request.id,
+        "message": f"Solicitud enviada a {receiver.username}. Recibirá una notificación.",
+        "status": "sent"
+    }, status=201)
+
+
+# Endpoint para obtener notificaciones pendientes
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def pending_session_requests(request):
+    requests = SessionRequest.objects.filter(
+        receiver=request.user,
+        status=SessionRequest.STATUS_PENDING
+    ).order_by('-created_at')
+
+    requests_data = []
+    for req in requests:
+        requests_data.append({
+            "id": req.id,
+            "requester": {
+                "id": req.requester.id,
+                "username": req.requester.username,
+                "first_name": req.requester.first_name,
+                "last_name": req.requester.last_name
+            },
+            "language": {
+                "id": req.language.id,
+                "name": req.language.name,
+                "icon": req.language.icon
+            },
+            "message": req.message,
+            "proposed_date_time": req.proposed_date_time,
+            "duration_minutes": req.duration_minutes,
+            "created_at": req.created_at,
+            "status": req.status
+        })
+
+    return Response(requests_data)
+
+
+# Endpoint para responder a solicitud
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def respond_session_request(request, request_id):
+    try:
+        session_request = SessionRequest.objects.get(id=request_id, receiver=request.user)
+    except SessionRequest.DoesNotExist:
+        return Response({"error": "Request not found"}, status=404)
+
+    if session_request.status != SessionRequest.STATUS_PENDING:
+        return Response({"error": "Esta solicitud ya fue respondida"}, status=400)
+
+    action = request.data.get('action')  # 'accept' o 'reject'
+
+    if action == 'accept':
+        # Crear la sesión real
+        session = Session.objects.create(
+            teacher=session_request.requester,
+            student=session_request.receiver,
+            language=session_request.language,
+            date_time=session_request.proposed_date_time,
+            duration_minutes=session_request.duration_minutes,
+            status=Session.STATUS_CONFIRMED
+        )
+
+        # Actualizar match a normal si existe
+        Match.objects.filter(
+            Q(user1=session_request.requester, user2=session_request.receiver) |
+            Q(user1=session_request.receiver, user2=session_request.requester),
+            match_type=Match.TYPE_POTENTIAL
+        ).update(match_type=Match.TYPE_NORMAL)
+
+        session_request.status = SessionRequest.STATUS_ACCEPTED
+        session_request.save()
+
+        return Response({
+            "message": "Sesión aceptada y programada",
+            "session_id": session.id,
+            "status": "accepted"
+        })
+
+    elif action == 'reject':
+        session_request.status = SessionRequest.STATUS_REJECTED
+        session_request.save()
+
+        return Response({
+            "message": "Solicitud rechazada",
+            "status": "rejected"
+        })
+
+    else:
+        return Response({"error": "Invalid action. Use 'accept' or 'reject'"}, status=400)
+
+
+# Endpoint para obtener el conteo de notificaciones pendientes
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def notifications_count(request):
+    count = SessionRequest.objects.filter(
+        receiver=request.user,
+        status=SessionRequest.STATUS_PENDING
+    ).count()
+
+    return Response({"count": count})
