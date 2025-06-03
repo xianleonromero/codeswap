@@ -1,5 +1,6 @@
 package com.naix.codeswap.adapters;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,8 +21,8 @@ import java.util.stream.Collectors;
 public class MatchAdapter extends RecyclerView.Adapter<MatchAdapter.MatchViewHolder> {
 
     private List<Match> matches;
-    private Context context;
-    private OnMatchClickListener listener;
+    private final Context context;
+    private final OnMatchClickListener listener;
 
     public interface OnMatchClickListener {
         void onViewDetailsClick(Match match);
@@ -41,6 +42,7 @@ public class MatchAdapter extends RecyclerView.Adapter<MatchAdapter.MatchViewHol
         return new MatchViewHolder(view);
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull MatchViewHolder holder, int position) {
         Match match = matches.get(position);
@@ -55,7 +57,7 @@ public class MatchAdapter extends RecyclerView.Adapter<MatchAdapter.MatchViewHol
         // Mostrar la compatibilidad
         holder.tvCompatibility.setText("Compatibilidad: " + match.getCompatibilityScore() + "%");
 
-        // Mostrar los lenguajes que hacen match
+        // Mostrar los lenguajes correctamente
         String offers = match.getUser1Offers().stream()
                 .map(ProgrammingLanguage::getName)
                 .collect(Collectors.joining(", "));
@@ -64,7 +66,17 @@ public class MatchAdapter extends RecyclerView.Adapter<MatchAdapter.MatchViewHol
                 .map(ProgrammingLanguage::getName)
                 .collect(Collectors.joining(", "));
 
-        holder.tvLanguages.setText("Ofreces: " + offers + "\nBusca: " + wants);
+        // Corregir el texto para que sea más claro
+        if (!offers.isEmpty() && !wants.isEmpty()) {
+            holder.tvLanguages.setText("Puedes enseñar: " + offers + "\n" +
+                    match.getUser2().getUsername() + " busca: " + wants);
+        } else if (!offers.isEmpty()) {
+            holder.tvLanguages.setText("Puedes enseñar: " + offers);
+        } else if (!wants.isEmpty()) {
+            holder.tvLanguages.setText(match.getUser2().getUsername() + " busca: " + wants);
+        } else {
+            holder.tvLanguages.setText("Sin coincidencias específicas");
+        }
 
         // Configurar listeners de botones
         holder.btnViewDetails.setOnClickListener(v -> listener.onViewDetailsClick(match));

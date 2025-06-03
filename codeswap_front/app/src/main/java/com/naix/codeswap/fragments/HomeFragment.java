@@ -82,11 +82,11 @@ public class HomeFragment extends Fragment {
         tvNormalMatchesCount.setText("0");
         tvCompletedSessionsCount.setText("0");
 
-        // Cargar solo matches potenciales para simplificar
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        Call<List<Map<String, Object>>> call = apiService.getPotentialMatches();
 
-        call.enqueue(new Callback<List<Map<String, Object>>>() {
+        // Cargar matches potenciales
+        Call<List<Map<String, Object>>> potentialCall = apiService.getPotentialMatches();
+        potentialCall.enqueue(new Callback<List<Map<String, Object>>>() {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -96,7 +96,46 @@ public class HomeFragment extends Fragment {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                // Mantener en 0, no mostrar errores
+                // Mantener en 0
+            }
+        });
+
+        // Cargar matches normales
+        Call<List<Map<String, Object>>> normalCall = apiService.getNormalMatches();
+        normalCall.enqueue(new Callback<List<Map<String, Object>>>() {
+            @Override
+            public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    tvNormalMatchesCount.setText(String.valueOf(response.body().size()));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
+                // Mantener en 0
+            }
+        });
+
+        // Cargar sesiones completadas
+        Call<List<Map<String, Object>>> pastSessionsCall = apiService.getPastSessions();
+        pastSessionsCall.enqueue(new Callback<List<Map<String, Object>>>() {
+            @Override
+            public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    int completedCount = 0;
+                    for (Map<String, Object> sessionData : response.body()) {
+                        String status = (String) sessionData.get("status");
+                        if ("COMPLETED".equals(status)) {
+                            completedCount++;
+                        }
+                    }
+                    tvCompletedSessionsCount.setText(String.valueOf(completedCount));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
+                // Mantener en 0
             }
         });
     }

@@ -184,7 +184,7 @@ def potential_matches(request):
             current_user = match.user2
             other_user = match.user1
 
-        # Lo que el usuario actual ofrece y el otro usuario quiere
+        # user1_offers: Lo que YO (current_user) ofrezco y que EL OTRO quiere
         current_offers = OfferedSkill.objects.filter(user=current_user)
         other_wants = WantedSkill.objects.filter(user=other_user)
 
@@ -197,17 +197,15 @@ def potential_matches(request):
                     "icon": offered.language.icon
                 })
 
-        # Lo que el otro usuario ofrece y el usuario actual quiere
-        other_offers = OfferedSkill.objects.filter(user=other_user)
-        current_wants = WantedSkill.objects.filter(user=current_user)
-
+        # user2_wants: Lo que EL OTRO (other_user) busca y que YO puedo enseñar
+        # (Es lo mismo que user1_offers, pero lo ponemos desde la perspectiva del otro)
         user2_wants = []
-        for wanted in current_wants:
-            if other_offers.filter(language=wanted.language).exists():
+        for want in other_wants:
+            if current_offers.filter(language=want.language).exists():
                 user2_wants.append({
-                    "id": wanted.language.id,
-                    "name": wanted.language.name,
-                    "icon": wanted.language.icon
+                    "id": want.language.id,
+                    "name": want.language.name,
+                    "icon": want.language.icon
                 })
 
         matches_data.append({
@@ -227,8 +225,8 @@ def potential_matches(request):
             "match_type": match.match_type,
             "compatibility_score": match.compatibility_score,
             "created_at": match.created_at,
-            "user1_offers": user1_offers,  # Lo que el usuario actual ofrece
-            "user2_wants": user2_wants  # Lo que el usuario actual quiere aprender
+            "user1_offers": user1_offers,  # Lo que YO ofrezco (que él quiere)
+            "user2_wants": user2_wants  # Lo que ÉL busca (que yo puedo enseñar)
         })
 
     return Response(matches_data)
@@ -253,7 +251,7 @@ def normal_matches(request):
             current_user = match.user2
             other_user = match.user1
 
-        # Lo que el usuario actual ofrece y el otro usuario quiere
+        # user1_offers: Lo que YO (current_user) ofrezco y que EL OTRO quiere
         current_offers = OfferedSkill.objects.filter(user=current_user)
         other_wants = WantedSkill.objects.filter(user=other_user)
 
@@ -266,17 +264,14 @@ def normal_matches(request):
                     "icon": offered.language.icon
                 })
 
-        # Lo que el otro usuario ofrece y el usuario actual quiere
-        other_offers = OfferedSkill.objects.filter(user=other_user)
-        current_wants = WantedSkill.objects.filter(user=current_user)
-
+        # user2_wants: Lo que EL OTRO (other_user) busca y que YO puedo enseñar
         user2_wants = []
-        for wanted in current_wants:
-            if other_offers.filter(language=wanted.language).exists():
+        for want in other_wants:
+            if current_offers.filter(language=want.language).exists():
                 user2_wants.append({
-                    "id": wanted.language.id,
-                    "name": wanted.language.name,
-                    "icon": wanted.language.icon
+                    "id": want.language.id,
+                    "name": want.language.name,
+                    "icon": want.language.icon
                 })
 
         matches_data.append({
@@ -296,8 +291,8 @@ def normal_matches(request):
             "match_type": match.match_type,
             "compatibility_score": match.compatibility_score,
             "created_at": match.created_at,
-            "user1_offers": user1_offers,  # Lo que el usuario actual ofrece
-            "user2_wants": user2_wants  # Lo que el usuario actual quiere aprender
+            "user1_offers": user1_offers,  # Lo que YO ofrezco (que él quiere)
+            "user2_wants": user2_wants  # Lo que ÉL busca (que yo puedo enseñar)
         })
 
     return Response(matches_data)
