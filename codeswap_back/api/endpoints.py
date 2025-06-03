@@ -474,7 +474,7 @@ def create_session(request):
         teacher=request.user,
         student=student,
         language=language,
-        date_time=datetime.fromisoformat(request.data['date_time'].replace('Z', '+00:00')),
+        date_time=timezone.make_aware(datetime.fromisoformat(request.data['date_time'].replace('Z', ''))),
         duration_minutes=request.data.get('duration_minutes', 60),
         status=Session.STATUS_PENDING
     )
@@ -612,7 +612,7 @@ def request_session(request):
         requester=request.user,
         receiver=receiver,
         language=language,
-        proposed_date_time=datetime.fromisoformat(request.data['date_time'].replace('Z', '+00:00')),
+        proposed_date_time=timezone.make_aware(datetime.fromisoformat(request.data['date_time'].replace('Z', ''))),
         duration_minutes=request.data.get('duration_minutes', 60),
         message=request.data.get('message', ''),
         status=SessionRequest.STATUS_PENDING
