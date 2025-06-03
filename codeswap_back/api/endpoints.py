@@ -167,28 +167,24 @@ def profile(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def normal_matches(request):
-    # Buscar matches donde el usuario sea user1 O user2
+def potential_matches(request):
+    # Buscar matches potenciales donde el usuario sea user1 O user2
     matches = Match.objects.filter(
         Q(user1=request.user) | Q(user2=request.user),
-        match_type=Match.TYPE_NORMAL
+        match_type=Match.TYPE_POTENTIAL
     )
 
     matches_data = []
     for match in matches:
         # Siempre estructurar la respuesta con el usuario actual como user1
-        # y el otro usuario como user2, independientemente del orden en la BD
-
         if match.user1 == request.user:
-            # El usuario actual es user1 en la BD
             current_user = match.user1
             other_user = match.user2
         else:
-            # El usuario actual es user2 en la BD, pero lo ponemos como user1 en la respuesta
-            current_user = request.user
+            current_user = match.user2
             other_user = match.user1
 
-        # Lo que el usuario actual ofrece y coincide con lo que el otro quiere
+        # Lo que el usuario actual ofrece y el otro usuario quiere
         current_offers = OfferedSkill.objects.filter(user=current_user)
         other_wants = WantedSkill.objects.filter(user=other_user)
 
@@ -201,7 +197,7 @@ def normal_matches(request):
                     "icon": offered.language.icon
                 })
 
-        # Lo que el otro usuario ofrece y coincide con lo que el usuario actual quiere
+        # Lo que el otro usuario ofrece y el usuario actual quiere
         other_offers = OfferedSkill.objects.filter(user=other_user)
         current_wants = WantedSkill.objects.filter(user=current_user)
 
@@ -232,7 +228,7 @@ def normal_matches(request):
             "compatibility_score": match.compatibility_score,
             "created_at": match.created_at,
             "user1_offers": user1_offers,  # Lo que el usuario actual ofrece
-            "user2_wants": user2_wants  # Lo que el otro usuario quiere (que el actual puede enseñar)
+            "user2_wants": user2_wants  # Lo que el usuario actual quiere aprender
         })
 
     return Response(matches_data)
@@ -240,35 +236,44 @@ def normal_matches(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def potential_matches(request):
+def normal_matches(request):
+    # Buscar matches normales donde el usuario sea user1 O user2
     matches = Match.objects.filter(
-        user1=request.user,
-        match_type=Match.TYPE_POTENTIAL
+        Q(user1=request.user) | Q(user2=request.user),
+        match_type=Match.TYPE_NORMAL
     )
 
     matches_data = []
     for match in matches:
-        # Lo que el usuario actual (user1) ofrece y el otro usuario (user2) quiere
-        user1_offers = OfferedSkill.objects.filter(user=match.user1)
-        user2_wants = WantedSkill.objects.filter(user=match.user2)
+        # Siempre estructurar la respuesta con el usuario actual como user1
+        if match.user1 == request.user:
+            current_user = match.user1
+            other_user = match.user2
+        else:
+            current_user = match.user2
+            other_user = match.user1
 
-        matching_offered = []
-        for offered in user1_offers:
-            if user2_wants.filter(language=offered.language).exists():
-                matching_offered.append({
+        # Lo que el usuario actual ofrece y el otro usuario quiere
+        current_offers = OfferedSkill.objects.filter(user=current_user)
+        other_wants = WantedSkill.objects.filter(user=other_user)
+
+        user1_offers = []
+        for offered in current_offers:
+            if other_wants.filter(language=offered.language).exists():
+                user1_offers.append({
                     "id": offered.language.id,
                     "name": offered.language.name,
                     "icon": offered.language.icon
                 })
 
-        # Lo que el otro usuario (user2) ofrece y el usuario actual (user1) quiere
-        user2_offers = OfferedSkill.objects.filter(user=match.user2)
-        user1_wants = WantedSkill.objects.filter(user=match.user1)
+        # Lo que el otro usuario ofrece y el usuario actual quiere
+        other_offers = OfferedSkill.objects.filter(user=other_user)
+        current_wants = WantedSkill.objects.filter(user=current_user)
 
-        matching_wanted = []
-        for wanted in user1_wants:
-            if user2_offers.filter(language=wanted.language).exists():
-                matching_wanted.append({
+        user2_wants = []
+        for wanted in current_wants:
+            if other_offers.filter(language=wanted.language).exists():
+                user2_wants.append({
                     "id": wanted.language.id,
                     "name": wanted.language.name,
                     "icon": wanted.language.icon
@@ -276,23 +281,23 @@ def potential_matches(request):
 
         matches_data.append({
             "id": match.id,
-            "user1": {
-                "id": match.user1.id,
-                "username": match.user1.username,
-                "first_name": match.user1.first_name,
-                "last_name": match.user1.last_name
+            "user1": {  # Siempre el usuario actual
+                "id": current_user.id,
+                "username": current_user.username,
+                "first_name": current_user.first_name,
+                "last_name": current_user.last_name
             },
-            "user2": {
-                "id": match.user2.id,
-                "username": match.user2.username,
-                "first_name": match.user2.first_name,
-                "last_name": match.user2.last_name
+            "user2": {  # Siempre el otro usuario
+                "id": other_user.id,
+                "username": other_user.username,
+                "first_name": other_user.first_name,
+                "last_name": other_user.last_name
             },
             "match_type": match.match_type,
             "compatibility_score": match.compatibility_score,
             "created_at": match.created_at,
-            "user1_offers": matching_offered,  # Lo que user1 ofrece
-            "user2_wants": matching_wanted  # Lo que user2 quiere (que user1 puede enseñar)
+            "user1_offers": user1_offers,  # Lo que el usuario actual ofrece
+            "user2_wants": user2_wants  # Lo que el usuario actual quiere aprender
         })
 
     return Response(matches_data)
@@ -307,68 +312,90 @@ def refresh_matches(request):
     user_offered = OfferedSkill.objects.filter(user=request.user)
     user_wanted = WantedSkill.objects.filter(user=request.user)
 
-    potential_users = set()
+    potential_matches = []
+    normal_matches = []
 
-    # Buscar usuarios que quieren lo que yo ofrezco Y ofrecen lo que yo quiero
-    for offered_skill in user_offered:
-        users_wanting_this = WantedSkill.objects.filter(
-            language=offered_skill.language
-        ).exclude(user=request.user).values_list('user', flat=True)
+    # Obtener mis habilidades como sets para facilitar las comparaciones
+    my_offers = set(user_offered.values_list('language_id', flat=True))
+    my_wants = set(user_wanted.values_list('language_id', flat=True))
 
-        for user_id in users_wanting_this:
-            for wanted_skill in user_wanted:
-                if OfferedSkill.objects.filter(
-                        user_id=user_id,
-                        language=wanted_skill.language
-                ).exists():
-                    if not Match.objects.filter(
-                            Q(user1=request.user, user2_id=user_id) |
-                            Q(user1_id=user_id, user2=request.user),
-                            match_type=Match.TYPE_NORMAL
-                    ).exists():
-                        potential_users.add(user_id)
-                        break
+    # Buscar todos los otros usuarios
+    other_users = User.objects.exclude(id=request.user.id)
 
-    # Crear matches potenciales con puntuaciones calculadas
+    for other_user in other_users:
+        # Obtener habilidades del otro usuario
+        other_offers = set(OfferedSkill.objects.filter(user=other_user).values_list('language_id', flat=True))
+        other_wants = set(WantedSkill.objects.filter(user=other_user).values_list('language_id', flat=True))
+
+        # Verificar si ya existe un match (en cualquier dirección)
+        existing_match = Match.objects.filter(
+            Q(user1=request.user, user2=other_user) |
+            Q(user1=other_user, user2=request.user)
+        ).exists()
+
+        if existing_match:
+            continue
+
+        # Verificar intersecciones
+        i_can_teach = my_offers.intersection(other_wants)  # Lo que yo ofrezco y él quiere
+        he_can_teach = other_offers.intersection(my_wants)  # Lo que él ofrece y yo quiero
+
+        # Determinar tipo de match
+        if i_can_teach and he_can_teach:
+            # MATCH POTENCIAL: Bidireccional - ambos pueden enseñarse algo
+            potential_matches.append(other_user)
+        elif i_can_teach or he_can_teach:
+            # MATCH NORMAL: Unidireccional - solo uno puede enseñar al otro
+            normal_matches.append(other_user)
+
+    # Crear matches potenciales
     matches_created = 0
-    for user_id in potential_users:
-        other_user = User.objects.get(id=user_id)
-
-        # Calcular compatibilidad
+    for other_user in potential_matches:
+        # Calcular compatibilidad para potenciales (más alta porque es bidireccional)
         my_offers = set(user_offered.values_list('language_id', flat=True))
         my_wants = set(user_wanted.values_list('language_id', flat=True))
         other_offers = set(OfferedSkill.objects.filter(user=other_user).values_list('language_id', flat=True))
         other_wants = set(WantedSkill.objects.filter(user=other_user).values_list('language_id', flat=True))
 
-        matches_i_can_teach = len(my_offers.intersection(other_wants))
-        matches_he_can_teach = len(other_offers.intersection(my_wants))
-        total_matches = matches_i_can_teach + matches_he_can_teach
-        max_possible = len(my_offers) + len(my_wants)
+        mutual_teaching_potential = len(my_offers.intersection(other_wants)) + len(other_offers.intersection(my_wants))
+        compatibility_score = min(95.0, 75.0 + (mutual_teaching_potential * 5) + random.uniform(-5, 10))
 
-        if max_possible > 0:
-            base_score = (total_matches / max_possible) * 30 + 65
-            compatibility_score = min(95.0, base_score + random.uniform(-5, 5))
-        else:
-            compatibility_score = random.uniform(65, 85)
+        Match.objects.create(
+            user1=request.user,
+            user2=other_user,
+            match_type=Match.TYPE_POTENTIAL,
+            compatibility_score=compatibility_score
+        )
+        matches_created += 1
 
-        # Crear match solo si no existe ya (ni en una dirección ni en otra)
-        if not Match.objects.filter(
-            Q(user1=request.user, user2=other_user) |
-            Q(user1=other_user, user2=request.user)
-        ).exists():
-            Match.objects.create(
-                user1=request.user,
-                user2=other_user,
-                match_type=Match.TYPE_POTENTIAL,
-                compatibility_score=compatibility_score
-            )
-            matches_created += 1
+    # Crear matches normales
+    for other_user in normal_matches:
+        # Calcular compatibilidad para normales (más baja porque es unidireccional)
+        my_offers = set(user_offered.values_list('language_id', flat=True))
+        my_wants = set(user_wanted.values_list('language_id', flat=True))
+        other_offers = set(OfferedSkill.objects.filter(user=other_user).values_list('language_id', flat=True))
+        other_wants = set(WantedSkill.objects.filter(user=other_user).values_list('language_id', flat=True))
+
+        single_direction_potential = max(
+            len(my_offers.intersection(other_wants)),
+            len(other_offers.intersection(my_wants))
+        )
+        compatibility_score = min(85.0, 60.0 + (single_direction_potential * 8) + random.uniform(-3, 8))
+
+        Match.objects.create(
+            user1=request.user,
+            user2=other_user,
+            match_type=Match.TYPE_NORMAL,
+            compatibility_score=compatibility_score
+        )
+        matches_created += 1
 
     return Response({
         "message": "Matches refreshed successfully",
-        "matches_found": matches_created
+        "matches_found": matches_created,
+        "potential_matches": len(potential_matches),
+        "normal_matches": len(normal_matches)
     })
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def upcoming_sessions(request):
