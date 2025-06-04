@@ -70,14 +70,27 @@ public class RegisterActivity extends AppCompatActivity {
         String password = etPassword.getText().toString();
         String confirmPassword = etConfirmPassword.getText().toString();
 
-        // Validación básica
+        // Validación campos vacíos
         if (username.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-            Toast.makeText(this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Completa todos los campos", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // Validación email
+        if (!isValidEmail(email)) {
+            Toast.makeText(this, "Email inválido. Debe tener @ y terminar en .com, .es, .org, etc.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Validación contraseña
+        if (password.length() < 6) {
+            Toast.makeText(this, "La contraseña debe tener al menos 6 caracteres", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Validación contraseñas iguales
         if (!password.equals(confirmPassword)) {
-            Toast.makeText(this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Las contraseñas no son iguales", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -87,9 +100,7 @@ public class RegisterActivity extends AppCompatActivity {
         registerData.put("email", email);
         registerData.put("password", password);
 
-        // Debug: ver qué datos se envían
         System.out.println("DEBUG - Datos a enviar: " + registerData.toString());
-        System.out.println("DEBUG - URL completa: " + ApiClient.getClient().baseUrl() + "auth/registration/");
 
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
         Call<Map<String, Object>> call = apiService.register(registerData);
@@ -97,35 +108,48 @@ public class RegisterActivity extends AppCompatActivity {
         call.enqueue(new Callback<Map<String, Object>>() {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
-                System.out.println("DEBUG - Response code: " + response.code());
-
                 if (response.isSuccessful() && response.body() != null) {
-                    System.out.println("DEBUG - Success response: " + response.body().toString());
-                    Toast.makeText(RegisterActivity.this, "Registro exitoso. Puedes iniciar sesión.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(RegisterActivity.this, "¡Cuenta creada! Ya puedes iniciar sesión", Toast.LENGTH_LONG).show();
                     finish();
                 } else {
-                    String errorMsg = "Error " + response.code();
-                    try {
-                        if (response.errorBody() != null) {
-                            String errorBody = response.errorBody().string();
-                            System.out.println("DEBUG - Error body: " + errorBody);
-                            errorMsg = "Error: " + errorBody;
-                        }
-                    } catch (Exception e) {
-                        System.out.println("DEBUG - Exception reading error: " + e.getMessage());
-                    }
-                    Toast.makeText(RegisterActivity.this, errorMsg, Toast.LENGTH_LONG).show();
+                    Toast.makeText(RegisterActivity.this, "Error al crear la cuenta", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                System.out.println("DEBUG - Network failure: " + t.getMessage());
-                t.printStackTrace();
-                Toast.makeText(RegisterActivity.this, "Error de red: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(RegisterActivity.this, "Sin conexión a internet", Toast.LENGTH_SHORT).show();
             }
         });
     }
+
+    private boolean isValidEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+
+        email = email.trim();
+
+        if (!email.contains("@") || email.indexOf("@") != email.lastIndexOf("@")) {
+            return false;
+        }
+
+        String[] parts = email.split("@");
+        if (parts.length != 2 || parts[0].isEmpty() || parts[1].isEmpty()) {
+            return false;
+        }
+
+        String[] validDomains = {".com", ".es", ".org", ".net", ".edu", ".gov", ".co", ".mx", ".ar", ".cl", ".pe"};
+
+        for (String domain : validDomains) {
+            if (parts[1].toLowerCase().endsWith(domain)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void testBackend() {
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
         Call<List<Map<String, Object>>> call = apiService.getProgrammingLanguages();
@@ -134,16 +158,10 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 System.out.println("TEST - Languages response: " + response.code());
-                if (response.isSuccessful() && response.body() != null) {
-                    Toast.makeText(RegisterActivity.this, "Backend OK - " + response.body().size() + " lenguajes", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(RegisterActivity.this, "Backend error: " + response.code(), Toast.LENGTH_SHORT).show();
-                }
             }
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(RegisterActivity.this, "No conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }

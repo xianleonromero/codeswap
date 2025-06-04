@@ -57,8 +57,18 @@ public class LoginActivity extends AppCompatActivity {
         String username = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString();
 
-        if (username.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
+        if (username.isEmpty()) {
+            Toast.makeText(this, "Ingresa tu usuario", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (password.isEmpty()) {
+            Toast.makeText(this, "Ingresa tu contraseña", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (password.length() < 6) {
+            Toast.makeText(this, "La contraseña debe tener al menos 6 caracteres", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -98,8 +108,6 @@ public class LoginActivity extends AppCompatActivity {
                         System.out.println("DEBUG - Token guardado: " + token);
                     }
 
-                    Toast.makeText(LoginActivity.this, "Login exitoso", Toast.LENGTH_SHORT).show();
-
                     Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
                     startActivity(intent);
                     finish();
@@ -114,14 +122,14 @@ public class LoginActivity extends AppCompatActivity {
                     } catch (Exception e) {
                         System.out.println("DEBUG - Exception: " + e.getMessage());
                     }
-                    Toast.makeText(LoginActivity.this, errorMsg, Toast.LENGTH_LONG).show();
+                    Toast.makeText(LoginActivity.this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
                 System.out.println("DEBUG - Login network error: " + t.getMessage());
-                Toast.makeText(LoginActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(LoginActivity.this, "Sin conexión a internet", Toast.LENGTH_SHORT).show();
             }
         });
     }

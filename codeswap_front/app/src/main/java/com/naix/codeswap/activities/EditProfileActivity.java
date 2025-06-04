@@ -74,14 +74,12 @@ public class EditProfileActivity extends AppCompatActivity {
             // Eliminar habilidad ofrecida
             offeredSkills.remove(skill);
             offeredAdapter.notifyDataSetChanged();
-            Toast.makeText(EditProfileActivity.this, "Habilidad eliminada", Toast.LENGTH_SHORT).show();
         });
 
         wantedAdapter = new SkillAdapter(this, wantedSkills, skill -> {
             // Eliminar habilidad buscada
             wantedSkills.remove(skill);
             wantedAdapter.notifyDataSetChanged();
-            Toast.makeText(EditProfileActivity.this, "Habilidad eliminada", Toast.LENGTH_SHORT).show();
         });
 
         recyclerSkillsOffered.setAdapter(offeredAdapter);
@@ -168,17 +166,17 @@ public class EditProfileActivity extends AppCompatActivity {
                         wantedAdapter.notifyDataSetChanged();
 
                     } catch (Exception e) {
-                        Toast.makeText(EditProfileActivity.this, "Error al procesar datos del perfil", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(EditProfileActivity.this, "Error al cargar perfil", Toast.LENGTH_SHORT).show();
                         e.printStackTrace();
                     }
                 } else {
-                    Toast.makeText(EditProfileActivity.this, "Error al cargar perfil", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(EditProfileActivity.this, "No se pudo cargar tu perfil", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                Toast.makeText(EditProfileActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                Toast.makeText(EditProfileActivity.this, "Sin conexión", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -243,10 +241,8 @@ public class EditProfileActivity extends AppCompatActivity {
                             targetList.add(selectedLanguage);
                             if (isOffered) {
                                 offeredAdapter.notifyDataSetChanged();
-                                Toast.makeText(EditProfileActivity.this, "Habilidad añadida a ofrecidas", Toast.LENGTH_SHORT).show();
                             } else {
                                 wantedAdapter.notifyDataSetChanged();
-                                Toast.makeText(EditProfileActivity.this, "Habilidad añadida a buscadas", Toast.LENGTH_SHORT).show();
                             }
                         }
                     });
@@ -272,7 +268,7 @@ public class EditProfileActivity extends AppCompatActivity {
 
         // Simple validación
         if (fullName.isEmpty() || email.isEmpty()) {
-            Toast.makeText(this, "Por favor, añade tu nombre para continuar", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Añade tu nombre", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -310,7 +306,7 @@ public class EditProfileActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 if (response.isSuccessful()) {
-                    Toast.makeText(EditProfileActivity.this, "Cambios guardados correctamente", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(EditProfileActivity.this, "¡Perfil actualizado!", Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
                     Toast.makeText(EditProfileActivity.this, "Error al guardar cambios", Toast.LENGTH_SHORT).show();
