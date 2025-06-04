@@ -77,5 +77,17 @@ public interface ApiService {
     @GET("notifications/count/")
     Call<Map<String, Object>> getNotificationsCount();
 
+    @GET("conversations/")
+    Call<List<Map<String, Object>>> getConversations();
+
+    @GET("conversations/{id}/messages/")
+    Call<List<Map<String, Object>>> getConversationMessages(@Path("id") int conversationId);
+
+    @POST("conversations/{id}/send/")
+    Call<Map<String, Object>> sendMessage(@Path("id") int conversationId, @Body Map<String, String> messageData);
+
+    @GET("messages/count/")
+    Call<Map<String, Object>> getMessagesCount();
+
 
 }

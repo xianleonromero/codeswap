@@ -243,3 +243,31 @@ class SessionRequest(models.Model):
 
     def is_pending(self):
         return self.status == self.STATUS_PENDING
+
+class Conversation(models.Model):
+    user1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversations_as_user1')
+    user2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversations_as_user2')
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_message_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user1', 'user2')
+
+    def __str__(self):
+        return f"{self.user1.username} - {self.user2.username}"
+
+    def get_other_user(self, current_user):
+        return self.user2 if self.user1 == current_user else self.user1
+
+class Message(models.Model):
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.sender.username}: {self.content[:50]}"

@@ -1,4 +1,6 @@
 import json
+
+import datetime
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
@@ -13,8 +15,9 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.forms.models import model_to_dict
-from datetime import datetime
-
+from datetime import datetime as dt
+from .models import Conversation, Message
+from django.db.models import Q, Max
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -26,17 +29,17 @@ def health_check(request):
 def login(request):
     username = request.data.get('username')
     password = request.data.get('password')
-    
+
     if not username or not password:
         return Response({"error": "Please provide both username and password"}, status=400)
-    
+
     user = authenticate(username=username, password=password)
-    
+
     if not user:
         return Response({"error": "Invalid credentials"}, status=401)
-    
+
     token, _ = Token.objects.get_or_create(user=user)
-    
+
     return Response({
         "token": token.key,
         "user_id": user.id,
@@ -49,20 +52,20 @@ def register(request):
     username = request.data.get('username')
     email = request.data.get('email')
     password = request.data.get('password')
-    
+
     if not username or not email or not password:
         return Response({"error": "Please provide username, email and password"}, status=400)
-    
+
     if User.objects.filter(username=username).exists():
         return Response({"error": "Username already exists"}, status=400)
-    
+
     if User.objects.filter(email=email).exists():
         return Response({"error": "Email already exists"}, status=400)
-    
+
     user = User.objects.create_user(username=username, email=email, password=password)
-    
+
     token, _ = Token.objects.get_or_create(user=user)
-    
+
     return Response({
         "token": token.key,
         "user_id": user.id,
@@ -74,14 +77,14 @@ def register(request):
 def languages(request):
     languages = ProgrammingLanguage.objects.all()
     languages_data = []
-    
+
     for lang in languages:
         languages_data.append({
             "id": lang.id,
             "name": lang.name,
             "icon": lang.icon
         })
-    
+
     return Response(languages_data)
 
 @api_view(['GET', 'PUT'])
@@ -102,7 +105,7 @@ def profile(request):
                 },
                 "level": skill.level
             })
-        
+
         wanted_skills = []
         for skill in WantedSkill.objects.filter(user=user):
             wanted_skills.append({
@@ -113,7 +116,7 @@ def profile(request):
                     "icon": skill.language.icon
                 }
             })
-        
+
         return Response({
             "user": {
                 "id": user.id,
@@ -128,7 +131,7 @@ def profile(request):
             "offered_skills": offered_skills,
             "wanted_skills": wanted_skills
         })
-    
+
     elif request.method == 'PUT':
         user = request.user
         profile = UserProfile.objects.get(user=user)
@@ -161,7 +164,7 @@ def profile(request):
             for skill_data in request.data['wanted_skills']:
                 language = ProgrammingLanguage.objects.get(id=skill_data['language_id'])
                 WantedSkill.objects.create(user=user, language=language)
-        
+
         return Response({"message": "Profile updated successfully"})
 
 @api_view(['GET'])
@@ -385,7 +388,7 @@ def upcoming_sessions(request):
         Q(teacher=request.user) | Q(student=request.user),
         date_time__gte=now
     ).order_by('date_time')
-    
+
     sessions_data = []
     for session in sessions:
         sessions_data.append({
@@ -412,7 +415,7 @@ def upcoming_sessions(request):
             "duration_minutes": session.duration_minutes,
             "google_calendar_event_id": session.google_calendar_event_id
         })
-    
+
     return Response(sessions_data)
 
 @api_view(['GET'])
@@ -423,7 +426,7 @@ def past_sessions(request):
         Q(teacher=request.user) | Q(student=request.user),
         date_time__lt=now
     ).order_by('-date_time')
-    
+
     sessions_data = []
     for session in sessions:
         sessions_data.append({
@@ -450,7 +453,7 @@ def past_sessions(request):
             "duration_minutes": session.duration_minutes,
             "google_calendar_event_id": session.google_calendar_event_id
         })
-    
+
     return Response(sessions_data)
 
 
@@ -521,17 +524,17 @@ def update_session_status(request, session_id):
 
     if request.user != session.teacher and request.user != session.student:
         return Response({"error": "You don't have permission to update this session"}, status=403)
-    
+
     if 'status' not in request.data:
         return Response({"error": "Status field is required"}, status=400)
-    
+
     new_status = request.data['status']
     if new_status not in [s[0] for s in Session.STATUS_CHOICES]:
         return Response({"error": "Invalid status value"}, status=400)
-    
+
     session.status = new_status
     session.save()
-    
+
     return Response({
         "id": session.id,
         "teacher": {
@@ -596,66 +599,47 @@ def admin_clear_users(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def request_session(request):
-    # DEBUG: Log inicial
-    print(f"🔵 DEBUG - request_session iniciado")
-    print(f"🔵 DEBUG - request.data: {request.data}")
-
     if 'receiver_id' not in request.data or 'language_id' not in request.data or 'date_time' not in request.data:
-        print(f"🔴 DEBUG - Missing fields error")
         return Response({"error": "Missing required fields"}, status=400)
 
     try:
         receiver = User.objects.get(id=request.data['receiver_id'])
         language = ProgrammingLanguage.objects.get(id=request.data['language_id'])
-        print(f"🟢 DEBUG - User and language found: {receiver.username}, {language.name}")
-    except (User.DoesNotExist, ProgrammingLanguage.DoesNotExist) as e:
-        print(f"🔴 DEBUG - User/Language error: {e}")
+    except (User.DoesNotExist, ProgrammingLanguage.DoesNotExist):
         return Response({"error": "Invalid receiver_id or language_id"}, status=400)
 
     if request.user == receiver:
-        print(f"🔴 DEBUG - Same user error")
         return Response({"error": "Cannot request session with yourself"}, status=400)
 
-    # DEBUG: Procesar fecha
+    # Parsear fecha
     try:
         date_str = request.data['date_time']
-        print(f"🟡 DEBUG - Original date string: {date_str}")
-
-        # Limpiar la fecha
         clean_date = date_str.replace('Z', '')
-        print(f"🟡 DEBUG - Clean date string: {clean_date}")
-
-        # Crear datetime
-        dt_naive = datetime.fromisoformat(clean_date)
-        print(f"🟡 DEBUG - Naive datetime: {dt_naive}")
-
-        # Hacer aware
+        dt_naive = dt.fromisoformat(clean_date)
         dt_aware = timezone.make_aware(dt_naive)
-        print(f"🟡 DEBUG - Aware datetime: {dt_aware}")
-
     except Exception as e:
-        print(f"🔴 DEBUG - Date parsing error: {e}")
         return Response({"error": f"Date parsing error: {e}"}, status=400)
 
-    # DEBUG: Crear SessionRequest
-    try:
-        print(f"🟡 DEBUG - Creating SessionRequest...")
-        session_request = SessionRequest.objects.create(
-            requester=request.user,
-            receiver=receiver,
-            language=language,
-            proposed_date_time=dt_aware,
-            duration_minutes=request.data.get('duration_minutes', 60),
-            message=request.data.get('message', ''),
-            status=SessionRequest.STATUS_PENDING
-        )
-        print(f"🟢 DEBUG - SessionRequest created successfully: {session_request.id}")
+    # Crear SessionRequest
+    session_request = SessionRequest.objects.create(
+        requester=request.user,
+        receiver=receiver,
+        language=language,
+        proposed_date_time=dt_aware,
+        duration_minutes=request.data.get('duration_minutes', 60),
+        message=request.data.get('message', ''),
+        status=SessionRequest.STATUS_PENDING
+    )
 
-    except Exception as e:
-        print(f"🔴 DEBUG - SessionRequest creation error: {e}")
-        import traceback
-        print(f"🔴 DEBUG - Full traceback: {traceback.format_exc()}")
-        return Response({"error": f"Creation error: {e}"}, status=500)
+    # Crear mensaje automático
+    from datetime import datetime
+    formatted_date = dt_aware.strftime("%d/%m/%Y")
+    formatted_time = dt_aware.strftime("%H:%M")
+    duration = request.data.get('duration_minutes', 60)
+
+    auto_message = f"¡Hola! Te he enviado una solicitud de sesión para aprender {language.name} el {formatted_date} a las {formatted_time} ({duration} minutos). ¿Te parece bien?"
+
+    create_conversation_and_message(request.user, receiver, auto_message)
 
     return Response({
         "id": session_request.id,
@@ -743,3 +727,150 @@ def notifications_count(request):
     ).count()
 
     return Response({"count": count})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def conversations(request):
+    # Obtener todas las conversaciones del usuario
+    conversations = Conversation.objects.filter(
+        Q(user1=request.user) | Q(user2=request.user)
+    ).annotate(
+        last_message_time=Max('messages__created_at')
+    ).order_by('-last_message_time')
+
+    conversations_data = []
+    for conv in conversations:
+        other_user = conv.get_other_user(request.user)
+
+        # Obtener último mensaje
+        last_message = conv.messages.last()
+        last_message_content = last_message.content if last_message else ""
+        last_message_time = last_message.created_at if last_message else conv.created_at
+
+        # Contar mensajes no leídos
+        unread_count = conv.messages.filter(
+            sender=other_user,
+            is_read=False
+        ).count()
+
+        conversations_data.append({
+            "id": conv.id,
+            "other_user": {
+                "id": other_user.id,
+                "username": other_user.username,
+                "first_name": other_user.first_name,
+                "last_name": other_user.last_name
+            },
+            "last_message": last_message_content,
+            "last_message_time": last_message_time,
+            "unread_count": unread_count
+        })
+
+    return Response(conversations_data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def conversation_messages(request, conversation_id):
+    try:
+        conversation = Conversation.objects.filter(
+            Q(user1=request.user) | Q(user2=request.user)
+        ).get(id=conversation_id)
+    except Conversation.DoesNotExist:
+        return Response({"error": "Conversation not found"}, status=404)
+
+    # Marcar mensajes como leídos
+    conversation.messages.filter(
+        sender=conversation.get_other_user(request.user),
+        is_read=False
+    ).update(is_read=True)
+
+    messages = conversation.messages.all()
+    messages_data = []
+
+    for msg in messages:
+        messages_data.append({
+            "id": msg.id,
+            "sender": {
+                "id": msg.sender.id,
+                "username": msg.sender.username
+            },
+            "content": msg.content,
+            "created_at": msg.created_at,
+            "is_own": msg.sender == request.user
+        })
+
+    return Response(messages_data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_message(request, conversation_id):
+    try:
+        conversation = Conversation.objects.filter(
+            Q(user1=request.user) | Q(user2=request.user)
+        ).get(id=conversation_id)
+    except Conversation.DoesNotExist:
+        return Response({"error": "Conversation not found"}, status=404)
+
+    content = request.data.get('content', '').strip()
+    if not content:
+        return Response({"error": "Message content required"}, status=400)
+
+    message = Message.objects.create(
+        conversation=conversation,
+        sender=request.user,
+        content=content
+    )
+
+    # Actualizar timestamp de conversación
+    conversation.last_message_at = timezone.now()
+    conversation.save()
+
+    return Response({
+        "id": message.id,
+        "content": message.content,
+        "created_at": message.created_at,
+        "sender": {
+            "id": message.sender.id,
+            "username": message.sender.username
+        }
+    }, status=201)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def messages_count(request):
+    unread_count = Message.objects.filter(
+        conversation__user1=request.user,
+        sender__in=Conversation.objects.filter(user1=request.user).values_list('user2', flat=True),
+        is_read=False
+    ).count() + Message.objects.filter(
+        conversation__user2=request.user,
+        sender__in=Conversation.objects.filter(user2=request.user).values_list('user1', flat=True),
+        is_read=False
+    ).count()
+
+    return Response({"count": unread_count})
+
+
+def create_conversation_and_message(user1, user2, message_content):
+    """Helper function para crear conversación y mensaje automático"""
+    # Buscar conversación existente (en cualquier orden)
+    conversation = Conversation.objects.filter(
+        Q(user1=user1, user2=user2) | Q(user1=user2, user2=user1)
+    ).first()
+
+    # Si no existe, crear nueva
+    if not conversation:
+        conversation = Conversation.objects.create(user1=user1, user2=user2)
+
+    # Crear mensaje automático
+    Message.objects.create(
+        conversation=conversation,
+        sender=user1,
+        content=message_content
+    )
+
+    return conversation

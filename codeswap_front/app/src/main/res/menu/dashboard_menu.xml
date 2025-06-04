@@ -3,6 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_messages"
+        android:icon="@android:drawable/ic_dialog_email"
+        android:title="Mensajes"
+        app:actionLayout="@layout/message_badge_layout"
+        app:showAsAction="always" />
+
+    <item
         android:id="@+id/action_notifications"
         android:icon="@drawable/ic_notifications"
         android:title="Notificaciones"

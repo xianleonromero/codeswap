@@ -50,6 +50,11 @@ urlpatterns = [
     path('api/session-requests/<int:request_id>/respond/', endpoints.respond_session_request, name='respond-request'),
     path('api/notifications/count/', endpoints.notifications_count, name='notifications-count'),
 
+    path('api/conversations/', endpoints.conversations, name='conversations'),
+    path('api/conversations/<int:conversation_id>/messages/', endpoints.conversation_messages, name='conversation-messages'),
+    path('api/conversations/<int:conversation_id>/send/', endpoints.send_message, name='send-message'),
+    path('api/messages/count/', endpoints.messages_count, name='messages-count'),
+
 
     path('api/admin/clear-users/', endpoints.admin_clear_users, name='admin-clear-users'),
 ]

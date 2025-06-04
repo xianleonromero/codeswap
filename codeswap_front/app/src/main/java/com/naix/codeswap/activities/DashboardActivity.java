@@ -12,6 +12,7 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.naix.codeswap.R;
+import com.naix.codeswap.fragments.ConversationsFragment;
 import com.naix.codeswap.fragments.HomeFragment;
 import com.naix.codeswap.fragments.MatchesFragment;
 import com.naix.codeswap.fragments.ProfileFragment;
@@ -33,6 +34,8 @@ public class DashboardActivity extends AppCompatActivity {
     private BottomNavigationView bottomNavigationView;
     private TextView notificationCountView;
     private View notificationBadge;
+    private TextView messageCountView;
+    private View messageBadge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,20 +94,27 @@ public class DashboardActivity extends AppCompatActivity {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.dashboard_menu, menu);
 
-        // Configurar el badge de notificaciones
+        // Configurar badge de mensajes
+        MenuItem messageItem = menu.findItem(R.id.action_messages);
+        View messageActionView = messageItem.getActionView();
+        if (messageActionView != null) {
+            messageBadge = messageActionView;
+            messageCountView = messageActionView.findViewById(R.id.tv_message_count);
+            messageActionView.setOnClickListener(v -> openMessages());
+        }
+
+        // Configurar badge de notificaciones (código existente)
         MenuItem notificationItem = menu.findItem(R.id.action_notifications);
         View actionView = notificationItem.getActionView();
-
         if (actionView != null) {
             notificationBadge = actionView;
             notificationCountView = actionView.findViewById(R.id.tv_notification_count);
-
-            // Click listener para el icono
             actionView.setOnClickListener(v -> openNotifications());
-
-            // Cargar contador inicial
-            updateNotificationCount();
         }
+
+        // Cargar contadores
+        updateNotificationCount();
+        updateMessageCount();
 
         return true;
     }
@@ -114,8 +124,57 @@ public class DashboardActivity extends AppCompatActivity {
         if (item.getItemId() == R.id.action_notifications) {
             openNotifications();
             return true;
+        } else if (item.getItemId() == R.id.action_messages) {
+            openMessages();
+            return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+    private void openMessages() {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, new ConversationsFragment())
+                .addToBackStack(null)
+                .commit();
+    }
+
+    private void updateMessageCount() {
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        Call<Map<String, Object>> call = apiService.getMessagesCount();
+
+        call.enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Object countObj = response.body().get("count");
+                    int count = 0;
+
+                    if (countObj instanceof Double) {
+                        count = ((Double) countObj).intValue();
+                    } else if (countObj instanceof Integer) {
+                        count = (Integer) countObj;
+                    }
+
+                    updateMessageBadgeCount(count);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                updateMessageBadgeCount(0);
+            }
+        });
+    }
+
+    private void updateMessageBadgeCount(int count) {
+        if (messageCountView != null) {
+            if (count > 0) {
+                messageCountView.setVisibility(View.VISIBLE);
+                messageCountView.setText(count > 99 ? "99+" : String.valueOf(count));
+            } else {
+                messageCountView.setVisibility(View.GONE);
+            }
+        }
     }
 
     private void openNotifications() {
@@ -170,7 +229,7 @@ public class DashboardActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Actualizar contador cuando volvemos al dashboard
         updateNotificationCount();
+        updateMessageCount();
     }
 }
