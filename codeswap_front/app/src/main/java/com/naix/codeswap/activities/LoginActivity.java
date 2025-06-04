@@ -67,11 +67,6 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        if (password.length() < 6) {
-            Toast.makeText(this, "La contraseña debe tener al menos 6 caracteres", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         // Crear objeto de login
         Map<String, String> loginData = new HashMap<>();
         loginData.put("username", username);

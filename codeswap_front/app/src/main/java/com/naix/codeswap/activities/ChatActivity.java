@@ -26,6 +26,8 @@ import java.util.Map;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import android.os.Handler;
+import android.os.Looper;
 
 public class ChatActivity extends AppCompatActivity {
 
@@ -38,6 +40,9 @@ public class ChatActivity extends AppCompatActivity {
     private String otherUserName;
     private List<ChatMessage> messages = new ArrayList<>();
     private ApiService apiService;
+    private Handler refreshHandler;
+    private Runnable refreshRunnable;
+    private static final int REFRESH_INTERVAL = 3000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +83,15 @@ public class ChatActivity extends AppCompatActivity {
 
         // Configurar envío de mensajes
         btnSend.setOnClickListener(v -> sendMessage());
+        // Configurar auto-refresh de mensajes
+        refreshHandler = new Handler(Looper.getMainLooper());
+        refreshRunnable = new Runnable() {
+            @Override
+            public void run() {
+                loadMessages();
+                refreshHandler.postDelayed(this, REFRESH_INTERVAL);
+            }
+        };
     }
 
     private void loadMessages() {
@@ -86,20 +100,25 @@ public class ChatActivity extends AppCompatActivity {
             @Override
             public void onResponse(@NonNull Call<List<Map<String, Object>>> call, @NonNull Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    int oldSize = messages.size();
+                    boolean wasAtBottom = isScrollAtBottom();
+
                     messages.clear();
                     for (Map<String, Object> msgData : response.body()) {
                         messages.add(ChatMessage.fromMap(msgData));
                     }
                     adapter.notifyDataSetChanged();
-                    if (!messages.isEmpty()) {
-                        recyclerChat.scrollToPosition(messages.size() - 1);
+
+                    // Solo hacer scroll si había pocos mensajes antes O si estaba al final
+                    if (oldSize == 0 || wasAtBottom || messages.size() > oldSize) {
+                        scrollToBottom();
                     }
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<List<Map<String, Object>>> call, @NonNull Throwable t) {
-                Toast.makeText(ChatActivity.this, "Error al cargar mensajes", Toast.LENGTH_SHORT).show();
+                // Fallar silenciosamente en auto-refresh para no molestar al usuario
             }
         });
     }
@@ -117,7 +136,10 @@ public class ChatActivity extends AppCompatActivity {
             public void onResponse(@NonNull Call<Map<String, Object>> call, @NonNull Response<Map<String, Object>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     etMessage.setText("");
-                    loadMessages(); // Recargar para mostrar el nuevo mensaje
+                    // Refresh inmediato después de enviar
+                    refreshHandler.removeCallbacks(refreshRunnable);
+                    loadMessages();
+                    refreshHandler.postDelayed(refreshRunnable, REFRESH_INTERVAL);
                 }
             }
 
@@ -135,5 +157,34 @@ public class ChatActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+    private boolean isScrollAtBottom() {
+        LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerChat.getLayoutManager();
+        if (layoutManager == null) return true;
+
+        int lastVisiblePosition = layoutManager.findLastVisibleItemPosition();
+        int totalItems = layoutManager.getItemCount();
+
+        return lastVisiblePosition >= totalItems - 2; // Considerar "cerca del final"
+    }
+
+    private void scrollToBottom() {
+        if (!messages.isEmpty()) {
+            recyclerChat.smoothScrollToPosition(messages.size() - 1);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Iniciar auto-refresh cuando la actividad es visible
+        refreshHandler.postDelayed(refreshRunnable, REFRESH_INTERVAL);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Detener auto-refresh cuando la actividad no es visible
+        refreshHandler.removeCallbacks(refreshRunnable);
     }
 }

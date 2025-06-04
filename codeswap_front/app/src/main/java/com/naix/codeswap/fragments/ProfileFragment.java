@@ -107,8 +107,29 @@ public class ProfileFragment extends Fragment {
                         Map<String, Object> user = (Map<String, Object>) data.get("user");
 
                         // Datos básicos
-                        String username = (String) user.get("username");
-                        tvUsername.setText(username);
+                        String firstName = (String) user.get("first_name");
+                        String lastName = (String) user.get("last_name");
+                        String fullName = "";
+
+                        if (firstName != null && !firstName.trim().isEmpty()) {
+                            fullName = firstName.trim();
+                        }
+                        if (lastName != null && !lastName.trim().isEmpty()) {
+                            if (!fullName.isEmpty()) {
+                                fullName += " " + lastName.trim();
+                            } else {
+                                fullName = lastName.trim();
+                            }
+                        }
+
+                        // Si no hay nombre completo, usar username
+                        if (fullName.isEmpty()) {
+                            fullName = (String) user.get("username");
+                        }
+
+                        tvUsername.setText(fullName);
+                        tvUserRating.setVisibility(View.GONE);
+
 
                         // Bio (puede ser null)
                         String bio = "";
@@ -117,16 +138,6 @@ public class ProfileFragment extends Fragment {
                         }
                         tvBio.setText(bio);
 
-                        // Rating (puede ser null)
-                        double rating = 4.5; // Default
-                        if (data.containsKey("rating") && data.get("rating") != null) {
-                            try {
-                                rating = Double.parseDouble(data.get("rating").toString());
-                            } catch (Exception e) {
-                                System.out.println("Error parsing rating: " + e.getMessage());
-                            }
-                        }
-                        tvUserRating.setText("Valoración: " + String.format("%.1f", rating) + "/5.0");
 
                         // Habilidades ofrecidas
                         List<ProgrammingLanguage> offeredSkills = new ArrayList<>();
