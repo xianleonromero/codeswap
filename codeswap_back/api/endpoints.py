@@ -295,35 +295,28 @@ def refresh_matches(request):
 
     user_offered = OfferedSkill.objects.filter(user=request.user)
     user_wanted = WantedSkill.objects.filter(user=request.user)
-
     potential_matches = []
     normal_matches = []
-
     # Obtener mis habilidades como sets para facilitar las comparaciones
     my_offers = set(user_offered.values_list('language_id', flat=True))
     my_wants = set(user_wanted.values_list('language_id', flat=True))
 
     # Buscar todos los otros usuarios
     other_users = User.objects.exclude(id=request.user.id)
-
     for other_user in other_users:
         # Obtener habilidades del otro usuario
         other_offers = set(OfferedSkill.objects.filter(user=other_user).values_list('language_id', flat=True))
         other_wants = set(WantedSkill.objects.filter(user=other_user).values_list('language_id', flat=True))
-
         # Verificar si ya existe un match (en cualquier dirección)
         existing_match = Match.objects.filter(
             Q(user1=request.user, user2=other_user) |
             Q(user1=other_user, user2=request.user)
         ).exists()
-
         if existing_match:
             continue
-
         # Verificar intersecciones
         i_can_teach = my_offers.intersection(other_wants)  # Lo que yo ofrezco y él quiere
         he_can_teach = other_offers.intersection(my_wants)  # Lo que él ofrece y yo quiero
-
         # Determinar tipo de match
         if i_can_teach and he_can_teach:
             # MATCH POTENCIAL: Bidireccional - ambos pueden enseñarse algo
