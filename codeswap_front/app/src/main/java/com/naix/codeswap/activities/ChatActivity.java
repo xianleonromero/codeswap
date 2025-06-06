@@ -102,7 +102,6 @@ public class ChatActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     int oldSize = messages.size();
                     boolean wasAtBottom = isScrollAtBottom();
-
                     messages.clear();
                     for (Map<String, Object> msgData : response.body()) {
                         messages.add(ChatMessage.fromMap(msgData));
@@ -117,10 +116,17 @@ public class ChatActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(@NonNull Call<List<Map<String, Object>>> call, @NonNull Throwable t) {
-                // Fallar silenciosamente en auto-refresh para no molestar al usuario
-            }
+            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {}
         });
+    }
+    private boolean isScrollAtBottom() {
+        LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerChat.getLayoutManager();
+        if (layoutManager == null) return true;
+
+        int lastVisiblePosition = layoutManager.findLastVisibleItemPosition();
+        int totalItems = layoutManager.getItemCount();
+
+        return lastVisiblePosition >= totalItems - 2; // Considerar "cerca del final"
     }
 
     private void sendMessage() {
@@ -158,15 +164,7 @@ public class ChatActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
-    private boolean isScrollAtBottom() {
-        LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerChat.getLayoutManager();
-        if (layoutManager == null) return true;
 
-        int lastVisiblePosition = layoutManager.findLastVisibleItemPosition();
-        int totalItems = layoutManager.getItemCount();
-
-        return lastVisiblePosition >= totalItems - 2; // Considerar "cerca del final"
-    }
 
     private void scrollToBottom() {
         if (!messages.isEmpty()) {

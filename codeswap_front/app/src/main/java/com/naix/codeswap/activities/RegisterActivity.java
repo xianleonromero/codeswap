@@ -127,26 +127,20 @@ public class RegisterActivity extends AppCompatActivity {
         if (email == null || email.trim().isEmpty()) {
             return false;
         }
-
         email = email.trim();
-
         if (!email.contains("@") || email.indexOf("@") != email.lastIndexOf("@")) {
             return false;
         }
-
         String[] parts = email.split("@");
         if (parts.length != 2 || parts[0].isEmpty() || parts[1].isEmpty()) {
             return false;
         }
-
         String[] validDomains = {".com", ".es", ".org", ".net", ".edu", ".gov", ".co", ".mx", ".ar", ".cl", ".pe"};
-
         for (String domain : validDomains) {
             if (parts[1].toLowerCase().endsWith(domain)) {
                 return true;
             }
         }
-
         return false;
     }
 

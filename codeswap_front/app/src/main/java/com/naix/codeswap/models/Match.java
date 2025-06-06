@@ -93,15 +93,12 @@ public class Match {
     // Método estático para crear Match desde Map (JSON)
     public static Match fromMap(Map<String, Object> data) {
         Match match = new Match();
-
         if (data.containsKey("id")) {
             match.setId(((Double) data.get("id")).intValue());
         }
-
         if (data.containsKey("match_type")) {
             match.setMatchType((String) data.get("match_type"));
         }
-
         if (data.containsKey("compatibility_score")) {
             Object score = data.get("compatibility_score");
             if (score instanceof Double) {
@@ -110,12 +107,10 @@ public class Match {
                 match.setCompatibilityScore((Float) score);
             }
         }
-
         if (data.containsKey("created_at")) {
             // Aquí podrías parsear la fecha si es necesario
             match.setCreatedAt(new Date());
         }
-
         // Parsear user1
         if (data.containsKey("user1")) {
             Map<String, Object> user1Data = (Map<String, Object>) data.get("user1");
@@ -125,7 +120,6 @@ public class Match {
             user1.setFullName((String) user1Data.get("first_name") + " " + (String) user1Data.get("last_name"));
             match.setUser1(user1);
         }
-
         // Parsear user2
         if (data.containsKey("user2")) {
             Map<String, Object> user2Data = (Map<String, Object>) data.get("user2");
@@ -135,7 +129,6 @@ public class Match {
             user2.setFullName((String) user2Data.get("first_name") + " " + (String) user2Data.get("last_name"));
             match.setUser2(user2);
         }
-
         // Parsear user1_offers
         if (data.containsKey("user1_offers")) {
             List<Map<String, Object>> offersData = (List<Map<String, Object>>) data.get("user1_offers");
@@ -148,7 +141,6 @@ public class Match {
             }
             match.setUser1Offers(offers);
         }
-
         // Parsear user2_wants
         if (data.containsKey("user2_wants")) {
             List<Map<String, Object>> wantsData = (List<Map<String, Object>>) data.get("user2_wants");

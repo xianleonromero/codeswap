@@ -31,30 +31,25 @@ public class ApiClient {
                 @Override
                 public Response intercept(Chain chain) throws IOException {
                     Request original = chain.request();
-
                     // No añadir token a endpoints de autenticación
                     String url = original.url().toString();
                     if (url.contains("/auth/login/") || url.contains("/auth/registration/") || url.contains("/languages/")) {
                         return chain.proceed(original);
                     }
-
                     // Obtener token si existe
                     String token = null;
                     if (context != null) {
                         SharedPreferences prefs = context.getSharedPreferences("CodeSwapPrefs", Context.MODE_PRIVATE);
                         token = prefs.getString("auth_token", null);
                     }
-
                     // Si hay token, añadirlo al header
                     if (token != null) {
                         Request.Builder requestBuilder = original.newBuilder()
                                 .header("Authorization", "Token " + token)
                                 .method(original.method(), original.body());
-
                         Request request = requestBuilder.build();
                         return chain.proceed(request);
                     }
-
                     return chain.proceed(original);
                 }
             });
